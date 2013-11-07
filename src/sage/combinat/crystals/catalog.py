@@ -19,6 +19,8 @@ This is a catalog of crystals that are currently implemented in Sage:
 * :class:`FastRankTwo <sage.combinat.crystals.fast_crystals.FastCrystal>`
 * :class:`GeneralizedYoungWalls
   <sage.combinat.crystals.generalized_young_walls.CrystalOfGeneralizedYoungWalls>`
+* :class:`GelfandTsetlinPatterns
+  <sage.combinat.crystals.gt_patterns.CrystalOfGelfandTsetlinPatterns>`
 * :func:`HighestWeight <sage.combinat.crystals.highest_weight_crystals.HighestWeightCrystal>`
 * :class:`Induced <sage.combinat.crystals.induced_structure.InducedCrystal>`
 * :class:`KacModule <sage.combinat.crystals.kac_modules.CrystalOfKacModule>`
@@ -82,6 +84,7 @@ from sage.combinat.shifted_primed_tableau import ShiftedPrimedTableaux_shape as 
 from sage.combinat.partition_kleshchev import KleshchevPartitions
 
 from sage.combinat.crystals.induced_structure import InducedCrystal as Induced
+from sage.combinat.crystals.gt_patterns import CrystalOfGelfandTsetlinPatterns as GelfandTsetlinPatterns
 
 from sage.combinat.crystals.kac_modules import CrystalOfKacModule as KacModule
 from sage.combinat.crystals.kac_modules import CrystalOfOddNegativeRoots as OddNegativeRoots
