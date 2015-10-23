@@ -312,6 +312,32 @@ class InfinityCrystalOfRiggedConfigurations(UniqueRepresentation, Parent):
             alpha = list(P.simple_roots())
             return -sum(sum(x) * alpha[i] for i,x in enumerate(self))
 
+        def f_star(self,i):
+            from sage.combinat.crystals.elementary_crystals import ElementaryCrystal
+            Binf = self.parent()
+            t0 = Binf.highest_weight_vector()
+            Bi = ElementaryCrystal(Binf.cartan_type(),i)
+            b0 = Bi(0)
+            tens = Bi.tensor(Binf)
+            gen = tens(b0,t0)
+            embedding = Binf.crystal_morphism({t0:gen}, codomain=tens)
+            pullback = tens.crystal_morphism({gen:t0}, codomain=Binf)
+            image = embedding(self)
+            return pullback(tens(image[0].f(i),image[1]))
+
+        def e_star(self,i):
+            from sage.combinat.crystals.elementary_crystals import ElementaryCrystal
+            Binf = self.parent()
+            t0 = Binf.highest_weight_vector()
+            Bi = ElementaryCrystal(Binf.cartan_type(),i)
+            b0 = Bi(0)
+            tens = Bi.tensor(Binf)
+            gen = tens(b0,t0)
+            embedding = Binf.crystal_morphism({t0:gen}, codomain=tens)
+            pullback = tens.crystal_morphism({gen:t0}, codomain=Binf)
+            image = embedding(self)
+            return pullback(tens(image[0].e(i),image[1]))
+
 class InfinityCrystalOfNonSimplyLacedRC(InfinityCrystalOfRiggedConfigurations):
     r"""
     Rigged configurations for `\mathcal{B}(\infty)` in non-simply-laced types.
