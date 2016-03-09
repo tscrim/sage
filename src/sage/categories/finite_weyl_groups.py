@@ -9,6 +9,7 @@ Finite Weyl Groups
 #******************************************************************************
 
 from sage.categories.category_with_axiom import CategoryWithAxiom
+from sage.rings.integer import Integer
 
 class FiniteWeylGroups(CategoryWithAxiom):
     """
@@ -34,4 +35,26 @@ class FiniteWeylGroups(CategoryWithAxiom):
         pass
 
     class ElementMethods:
-        pass
+        # FIXME: This is only faster in general when the Weyl group is on the ambient space
+        def length(self):
+            """
+            Return the length of ``self``.
+
+            Compute the length by counting the number of positive
+            roots that are sent to negative roots.
+
+            EXAMPLES::
+
+                sage: W = WeylGroup(['D',5])
+                sage: w0 = W.long_element()
+                sage: w0.length()
+                20
+                sage: len(W.domain().positive_roots())
+                20
+            """
+            ct = 0
+            for rt in self.parent().domain().positive_roots():
+                if not self.action(rt).is_positive_root():
+                    ct += 1
+            return Integer(ct)
+
