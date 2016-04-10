@@ -48,6 +48,9 @@ cdef class Iterator(object):
             raise ValueError('the algorithm (="%s") must be either "depth" or "breadth"')
         self.algorithm = algorithm
 
+    cpdef list succ_pub(self, tuple x):
+        return self.succ(x[0], x[1])
+
     cdef list succ(self, PermutationGroupElement u, int first):
         cdef PermutationGroupElement u1, si
         cdef int i, j

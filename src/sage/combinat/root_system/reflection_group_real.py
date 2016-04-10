@@ -304,6 +304,14 @@ class RealReflectionGroup(ComplexReflectionGroup):
         """
         return self.iteration(algorithm="breadth", tracking_words=True)
 
+    def cardinality_by_SF(self):
+        from sage.combinat.root_system.reflection_group_c import Iterator
+        from sage.combinat.backtrack import SearchForest
+        I = Iterator(self, N=self.number_of_reflections(),
+                     algorithm='depth', tracking_words=False)
+        SF = SearchForest([(self.one(), -1)], I.succ_pub, algorithm='depth')
+        return SF.map_reduce()
+
     @cached_method
     def bipartite_index_set(self):
         r"""
