@@ -341,7 +341,7 @@ class CrystalOfLSPaths(UniqueRepresentation, Parent):
             # TODO: Deprecate
             assert 0 <= which_step <= len(self.value)
             v = self.value.value[which_step]
-            L = LittelmannPath(self.value.value[:which_step] + (r*v,(1-r)*v) + self.value.value[which_step+1:])
+            L = LittelmannPath(self.value.value[:which_step] + [r*v,(1-r)*v] + self.value.value[which_step+1:])
             return self.parent()(L)
 
         def reflect_step(self, which_step, i):
@@ -357,9 +357,9 @@ class CrystalOfLSPaths(UniqueRepresentation, Parent):
                 sage: b.reflect_step(0,2)
                 (2*Lambda[1] - Lambda[2],)
             """
-            assert i in self.index_set()
             assert 0 <= which_step and which_step <= len(self.value)
-            return self.parent()(self.value.reflect_step(which_step, i, root))
+            i = self.parent()._inverse_index_map[i]
+            return self.parent()(self.value.copy().reflect_step(which_step, i, root))
 
         def epsilon(self, i):
             r"""
@@ -428,7 +428,7 @@ class CrystalOfLSPaths(UniqueRepresentation, Parent):
             """
             root = self.parent()._simple_root_as_list(i)
             i = self.parent()._inverse_index_map[i]
-            ret = self.value.e(i, root, power, to_string_end)
+            ret = self.value.copy().e(i, root, power, to_string_end)
             if ret is None:
                 return None
             return self.parent()(ret)
@@ -453,7 +453,7 @@ class CrystalOfLSPaths(UniqueRepresentation, Parent):
             """
             if not self.value:
                 return self
-            return self.parent()(self.value.dualize())
+            return self.parent()(self.value.dualize(inplace=False))
 
         def f(self, i, power=1, to_string_end=False, length_only=False):
             r"""
@@ -490,7 +490,7 @@ class CrystalOfLSPaths(UniqueRepresentation, Parent):
             """
             root = self.parent()._simple_root_as_list(i)
             i = self.parent()._inverse_index_map[i]
-            ret = self.value.f(i, root, power, to_string_end)
+            ret = self.value.copy().f(i, root, power, to_string_end)
             if ret is None:
                 return None
             return self.parent()(ret)
@@ -523,7 +523,7 @@ class CrystalOfLSPaths(UniqueRepresentation, Parent):
             """
             root = self.parent()._simple_root_as_list(i)
             i = self.parent()._inverse_index_map[i]
-            return self.parent()(self.value.s(i, root))
+            return self.parent()(self.value.copy().s(i, root))
 
         def weight(self):
             """
@@ -545,8 +545,8 @@ class CrystalOfLSPaths(UniqueRepresentation, Parent):
             I = self.index_set()
             WLR = self.parent().weight_lattice_realization()
             B = list(WLR.basis())
-            to_weight = lambda v: WLR.sum(c*B[i] for i,c in enumerate(v))
-            return repr(tuple([to_weight(v) for v in self.value.value]))
+            return repr(tuple([WLR.sum(c*B[i] for i,c in enumerate(v))
+                               for v in self.value.value]))
 
         def _latex_(self):
             r"""
@@ -562,8 +562,8 @@ class CrystalOfLSPaths(UniqueRepresentation, Parent):
             I = self.index_set()
             WLR = self.parent().weight_lattice_realization()
             B = list(WLR.basis())
-            to_weight = lambda v: WLR.sum(c*B[i] for i,c in enumerate(v))
-            return [latex(to_weight(v)) for v in self.value.value]
+            return latex([WLR.sum(c*B[i] for i,c in enumerate(v))
+                          for v in self.value.value])
 
 
 #####################################################################
