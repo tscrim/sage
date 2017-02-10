@@ -344,9 +344,12 @@ class CrystalOfLSPaths(UniqueRepresentation, Parent):
                 (1/3*Lambda[1] + 1/3*Lambda[2], 2/3*Lambda[1] + 2/3*Lambda[2])
             """
             # TODO: Deprecate
-            assert 0 <= which_step and which_step <= len(self.value)
+            assert 0 <= which_step and which_step <= len(self.value.value)
             v = self.value.value[which_step]
-            L = LittelmannPath(self.value.value[:which_step] + [r*v,(1-r)*v] + self.value.value[which_step+1:])
+            s1 = [r*a for a in v]
+            r = 1 - r
+            s2 = [r*a for a in v]
+            L = LittelmannPath(self.value.value[:which_step] + [s1,s2] + self.value.value[which_step+1:])
             return self.parent()(L)
 
         def reflect_step(self, which_step, i):
@@ -362,8 +365,9 @@ class CrystalOfLSPaths(UniqueRepresentation, Parent):
                 sage: b.reflect_step(0,2)
                 (2*Lambda[1] - Lambda[2],)
             """
-            assert 0 <= which_step and which_step <= len(self.value)
+            assert 0 <= which_step and which_step <= len(self.value.value)
             i = self.parent()._inverse_index_map[i]
+            root = self.parent()._simple_root_as_list(i)
             return self.parent()(self.value.copy().reflect_step(which_step, i, root))
 
         def epsilon(self, i):
@@ -433,6 +437,8 @@ class CrystalOfLSPaths(UniqueRepresentation, Parent):
             """
             root = self.parent()._simple_root_as_list(i)
             i = self.parent()._inverse_index_map[i]
+            if length_only:
+                return self.value.epsilon(i)
             ret = self.value.copy().e(i, root, power, to_string_end)
             if ret is None:
                 return None
@@ -495,6 +501,8 @@ class CrystalOfLSPaths(UniqueRepresentation, Parent):
             """
             root = self.parent()._simple_root_as_list(i)
             i = self.parent()._inverse_index_map[i]
+            if length_only:
+                return self.value.phi(i)
             ret = self.value.copy().f(i, root, power, to_string_end)
             if ret is None:
                 return None
@@ -562,7 +570,7 @@ class CrystalOfLSPaths(UniqueRepresentation, Parent):
                 sage: C = crystals.LSPaths(['A',2],[1,1])
                 sage: c = C.module_generators[0]
                 sage: c._latex_()
-                [\Lambda_{1} + \Lambda_{2}]
+                \left[\Lambda_{1} + \Lambda_{2}\right]
             """
             I = self.index_set()
             WLR = self.parent().weight_lattice_realization()
@@ -880,18 +888,26 @@ class CrystalOfProjectedLevelZeroLSPaths(CrystalOfLSPaths):
             weight = self.parent().weight
             l = []
             s = 0
-            for c in self.value:
-                supp = c.support()
+            I = self.index_set()
+            WLR = self.parent().weight_lattice_realization()
+            B = list(WLR.basis())
+            for c in self.value.value:
+                supp = [i for i,val in enumerate(c) if val != 0]
                 if supp:
                     i = supp[0]
-                    for w in weight._orbit_iter():
+                    Ii = I[i]
+                    coeff = c[i]
+                    for w in weight.orbit():
                         # Check whether the vectors c and w are positive scalar multiples of each other
-                        # If i is not in the support of w, then the first
-                        #   product is 0
-                        if c[i] * w[i] > 0 and c[i] * w == w[i] * c:
-                            s += c[i] / w[i]
-                            l += [s]
-                            break
+                        # We assume characteristic 0, and we know coeff != 0,
+                        #   so coeff * w[Ii] != 0 iff w[Ii] != 0.
+                        # Thus we don't have to check Ii in w.support()
+                        if coeff * w[Ii] > 0:
+                            wt = WLR.sum(val*B[j] for j,val in enumerate(c))
+                            if coeff * w == w[Ii] * wt:
+                                s += coeff / w[i]
+                                l += [s]
+                                break
             return l
 
         @cached_in_parent_method
@@ -922,7 +938,12 @@ class CrystalOfProjectedLevelZeroLSPaths(CrystalOfLSPaths):
             cartan = self.parent().weight.parent().cartan_type().classical()
             I = cartan.index_set()
             W = WeylGroup(cartan, prefix='s', implementation="permutation")
-            return [W.from_reduced_word(x.to_dominant_chamber(index_set=I, reduced_word=True)[1]) for x in self.value]
+            WLR = self.parent().weight_lattice_realization()
+            B = list(WLR.basis())
+            def to_weight(x):
+                return WLR.sum(c*B[j] for j,c in enumerate(x))
+            return [W.from_reduced_word(to_weight(x).to_dominant_chamber(index_set=I, reduced_word=True)[1])
+                    for x in self.value.value]
 
         @cached_in_parent_method
         def energy_function(self):
