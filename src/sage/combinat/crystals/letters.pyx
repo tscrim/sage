@@ -82,15 +82,16 @@ def CrystalOfLetters(cartan_type, element_print_style=None, dual=None):
         [-, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z]
     """
     ct = CartanType(cartan_type)
-    if ct.letter == 'A':
+    letter = ct.type()
+    if letter == 'A':
         return ClassicalCrystalOfLetters(ct, Crystal_of_letters_type_A_element)
-    elif ct.letter == 'B':
+    elif letter == 'B':
         return ClassicalCrystalOfLetters(ct, Crystal_of_letters_type_B_element)
-    elif ct.letter == 'C':
+    elif letter == 'C':
         return ClassicalCrystalOfLetters(ct, Crystal_of_letters_type_C_element)
-    elif ct.letter == 'D':
+    elif letter == 'D':
         return ClassicalCrystalOfLetters(ct, Crystal_of_letters_type_D_element)
-    elif ct.letter == 'E' and ct.rank() == 6:
+    elif letter == 'E' and ct.rank() == 6:
         if dual is None:
             return ClassicalCrystalOfLetters(ct,
                                              Crystal_of_letters_type_E6_element,
@@ -99,11 +100,11 @@ def CrystalOfLetters(cartan_type, element_print_style=None, dual=None):
             return ClassicalCrystalOfLetters(ct,
                                              Crystal_of_letters_type_E6_element_dual,
                                              element_print_style, dual = True)
-    elif ct.letter == 'E' and ct.rank() == 7:
+    elif letter == 'E' and ct.rank() == 7:
         return ClassicalCrystalOfLetters(ct, Crystal_of_letters_type_E7_element)
-    elif ct.letter == 'E' and ct.rank() == 8 or ct.letter == 'F':
+    elif letter == 'E' and ct.rank() == 8 or letter == 'F':
         return ClassicalCrystalOfLettersWrapped(ct)
-    elif ct.letter == 'G':
+    elif letter == 'G':
         return ClassicalCrystalOfLetters(ct, Crystal_of_letters_type_G_element)
     else:
         raise NotImplementedError

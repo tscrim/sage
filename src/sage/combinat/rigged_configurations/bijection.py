@@ -59,6 +59,9 @@ from sage.combinat.rigged_configurations.bij_type_E67 import RCToKRTBijectionTyp
 from sage.combinat.rigged_configurations.bij_type_E8 import KRTToRCBijectionTypeE8
 from sage.combinat.rigged_configurations.bij_type_E8 import RCToKRTBijectionTypeE8
 
+from sage.combinat.rigged_configurations.bij_type_E6_twisted import KRTToRCBijectionTypeE6Twisted
+from sage.combinat.rigged_configurations.bij_type_E6_twisted import RCToKRTBijectionTypeE6Twisted
+
 def KRTToRCBijection(tp_krt):
     r"""
     Return the correct KR tableaux to rigged configuration bijection helper class.
@@ -97,7 +100,8 @@ def KRTToRCBijection(tp_krt):
             return KRTToRCBijectionTypeA2Odd(tp_krt)
         if typ == 'C': # D_{n+1}^{(2)}
             return KRTToRCBijectionTypeDTwisted(tp_krt)
-        #if typ == 'F': # E_6^{(2)}
+        if typ == 'F': # E_6^{(2)}
+            KRTToRCBijectionTypeE6Twisted(tp_krt)
         if typ == 'G': # D_4^{(3)}
             return KRTToRCBijectionTypeDTri(tp_krt)
     raise NotImplementedError
@@ -140,7 +144,8 @@ def RCToKRTBijection(rigged_configuration_elt):
             return RCToKRTBijectionTypeA2Odd(rigged_configuration_elt)
         if typ == 'C': # D_{n+1}^{(2)}
             return RCToKRTBijectionTypeDTwisted(rigged_configuration_elt)
-        #if typ == 'F': # E_6^{(2)}
+        if typ == 'F': # E_6^{(2)}
+            return RCToKRTBijectionTypeE6Twisted(rigged_configuration_elt)
         if typ == 'G': # D_4^{(3)}
             return RCToKRTBijectionTypeDTri(rigged_configuration_elt)
     raise NotImplementedError

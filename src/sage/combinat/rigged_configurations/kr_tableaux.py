@@ -266,7 +266,8 @@ class KirillovReshetikhinTableaux(CrystalOfWords):
                 if r == ct.dual().classical().rank():
                     return KRTableauxDTwistedSpin(ct, r, s)
                 return KRTableauxTypeBox(ct, r, s)
-            #if typ == 'F': # E_6^{(2)}
+            if typ == 'F': # E_6^{(2)}
+                return KRTableauxTypeFromRC(ct, r, s)
             if typ == 'G': # D_4^{(3)}
                 if r == 1:
                     return KRTableauxTypeBox(ct, r, s)
@@ -1872,6 +1873,10 @@ class KRTableauxTypeFromRC(KirillovReshetikhinTableaux):
                     return self._r + 1
                 return 9 - self._r
         if not self._cartan_type.is_untwisted_affine():
+            if self._cartan_type.dual().type() == 'F':
+                if self._r == 4:
+                    return 2
+                return self._r
             if self._cartan_type.dual().type() == 'G':
                 return self._r
         return len(self.module_generators[0]) // self._s
