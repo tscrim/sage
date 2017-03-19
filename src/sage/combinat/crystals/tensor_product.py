@@ -43,6 +43,8 @@ from sage.categories.regular_crystals import RegularCrystals
 from sage.categories.sets_cat import Sets
 from sage.combinat.root_system.cartan_type import CartanType
 from sage.combinat.partition import Partition
+from sage.combinat.crystals.tensor_product_element import (TensorProductOfCrystalsElement,
+    TensorProductOfRegularCrystalsElement, CrystalOfTableauxElement)
 from .letters import CrystalOfLetters
 from .spins import CrystalOfSpins, CrystalOfSpinsMinus, CrystalOfSpinsPlus
 from sage.misc.flatten import flatten
