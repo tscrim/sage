@@ -1,7 +1,7 @@
-"""
+r"""
 Miscellaneous Functions
 
-This file contains some miscellaneous functions used by p-adics.
+This file contains two miscellaneous functions used by `p`-adics.
 
 - ``min`` -- a version of ``min`` that returns `\infty` on empty input.
 - ``max`` -- a version of ``max`` that returns `-\infty` on empty input.
@@ -27,10 +27,11 @@ from six.moves.builtins import min as python_min
 from six.moves.builtins import max as python_max
 from sage.rings.infinity import infinity
 
+
 def min(*L):
-    """
-    Returns the minimum of the inputs, where the minimum of the empty
-    list is ``infinity``.
+    r"""
+    Return the minimum of the inputs, where the minimum of the empty
+    list is `\infty`.
 
     EXAMPLES::
 
@@ -47,10 +48,11 @@ def min(*L):
     except ValueError:
         return infinity
 
+
 def max(*L):
-    """
-    Returns the maximum of the inputs, where the maximum of the empty
-    list is ``-infinity``.
+    r"""
+    Return the maximum of the inputs, where the maximum of the empty
+    list is `-\infty`.
 
     EXAMPLES::
 
@@ -66,3 +68,25 @@ def max(*L):
         return python_max(L)
     except ValueError:
         return -infinity
+
+def precprint(prec_type, prec_cap, p):
+    """
+    String describing the precision mode on a p-adic ring or field.
+
+    EXAMPLES::
+
+        sage: from sage.rings.padics.misc import precprint
+        sage: precprint('capped-rel', 12, 2)
+        'with capped relative precision 12'
+        sage: precprint('capped-abs', 11, 3)
+        'with capped absolute precision 11'
+        sage: precprint('floating-point', 1234, 5)
+        'with floating precision 1234'
+        sage: precprint('fixed-mod', 1, 17)
+        'of fixed modulus 17^1'
+    """
+    precD = {'capped-rel':'with capped relative precision %s'%prec_cap,
+             'capped-abs':'with capped absolute precision %s'%prec_cap,
+             'floating-point':'with floating precision %s'%prec_cap,
+             'fixed-mod':'of fixed modulus %s^%s'%(p, prec_cap)}
+    return precD[prec_type]

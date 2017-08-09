@@ -1,17 +1,19 @@
 """
 Dense Matrices over a general ring
 """
+from __future__ import absolute_import
+
 cimport cython
 from cpython.list cimport *
 from cpython.number cimport *
 from cpython.ref cimport *
 
-cimport matrix_dense
-import matrix_dense
+cimport sage.matrix.matrix_dense as matrix_dense
+from . import matrix_dense
 
-cimport matrix
+cimport sage.matrix.matrix as matrix
 
-from sage.structure.element cimport parent_c
+from sage.structure.element cimport parent as parent_c
 
 cdef class Matrix_generic_dense(matrix_dense.Matrix_dense):
     r"""
@@ -33,12 +35,12 @@ cdef class Matrix_generic_dense(matrix_dense.Matrix_dense):
     Test comparisons::
 
         sage: A = random_matrix(Integers(25)['x'],2)
-        sage: cmp(A,A)
-        0
-        sage: cmp(A,A+1)
-        -1
-        sage: cmp(A+1,A)
-        1
+        sage: A == A
+        True
+        sage: A < A + 1
+        True
+        sage: A+1 < A
+        False
     """
     ########################################################################
     # LEVEL 1 functionality
@@ -143,6 +145,19 @@ cdef class Matrix_generic_dense(matrix_dense.Matrix_dense):
 
     cdef get_unsafe(self, Py_ssize_t i, Py_ssize_t j):
         return self._entries[i*self._ncols + j]
+
+
+    def _reverse_unsafe(self):
+        r"""
+        TESTS::
+
+            sage: m = matrix(ZZ['x,y'], 2, 3, range(6))
+            sage: m._reverse_unsafe()
+            sage: m
+            [5 4 3]
+            [2 1 0]
+        """
+        self._entries.reverse()
 
     def _pickle(self):
         """
