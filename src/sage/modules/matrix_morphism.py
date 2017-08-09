@@ -936,7 +936,7 @@ class MatrixMorphism_abstract(sage.categories.morphism.Morphism):
             sage: phi.is_identity()
             True
 
-        TEST::
+        TESTS::
 
             sage: V = QQ^10
             sage: H = Hom(V, V)
@@ -980,7 +980,7 @@ class MatrixMorphism_abstract(sage.categories.morphism.Morphism):
             sage: phi.is_zero()
             False
 
-        TEST::
+        TESTS::
 
             sage: V = QQ^10
             sage: W = QQ^3
@@ -1065,7 +1065,7 @@ class MatrixMorphism_abstract(sage.categories.morphism.Morphism):
             sage: phi.is_equal_function(zeta)
             False
 
-        TEST::
+        TESTS::
 
             sage: H = Hom(ZZ^2, ZZ^2)
             sage: phi = H(matrix(ZZ, 2, range(4)))
@@ -1354,7 +1354,7 @@ class MatrixMorphism(MatrixMorphism_abstract):
         """
         Tell whether ``self`` is injective.
 
-        EXAMPLE::
+        EXAMPLES::
 
             sage: V1 = QQ^2
             sage: V2 = QQ^3

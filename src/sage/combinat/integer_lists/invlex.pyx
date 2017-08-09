@@ -38,7 +38,7 @@ from sage.combinat.integer_lists.lists import IntegerLists
 from sage.combinat.integer_lists.base import Infinity
 
 
-class IntegerListsLex(IntegerLists):
+class IntegerListsLex(IntegerLists, metaclass=ClasscallMetaclass):
     r"""
     Lists of nonnegative integers with constraints, in inverse
     lexicographic order.
@@ -783,8 +783,6 @@ class IntegerListsLex(IntegerLists):
     """
     backend_class = IntegerListsBackend_invlex
 
-    __metaclass__ = ClasscallMetaclass
-
     @staticmethod
     def __classcall_private__(cls, n=None, **kwargs):
         r"""
@@ -1472,7 +1470,7 @@ class IntegerListsLexIter(object):
 
         lower_bound = max(0, p.floor(i))
         upper_bound = min(max_sum, p.ceiling(i))
-        if prev != None:
+        if prev is not None:
             lower_bound = max(lower_bound, prev + p.min_slope)
             upper_bound = min(upper_bound, prev + p.max_slope)
 
