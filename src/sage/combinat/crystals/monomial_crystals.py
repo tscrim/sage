@@ -112,6 +112,9 @@ from sage.rings.integer_ring import ZZ
 from sage.matrix.matrix import is_Matrix
 from sage.matrix.matrix_space import MatrixSpace
 
+import six
+
+
 class NakajimaMonomial(Element):
     r"""
     An element of the monomial crystal.
@@ -186,7 +189,7 @@ class NakajimaMonomial(Element):
         if not self._Y:
             return "1"
 
-        L = sorted(self._Y.iteritems(), key=lambda x: (x[0][0], x[0][1]))
+        L = sorted(six.iteritems(self._Y), key=lambda x: (x[0][0], x[0][1]))
         exp = lambda e: "^{}".format(e) if e != 1 else ""
         return ' '.join("Y({},{})".format(mon[0][0], mon[0][1]) + exp(mon[1])
                         for mon in L)
@@ -201,7 +204,7 @@ class NakajimaMonomial(Element):
             4715601665014767730  # 64-bit
             -512614286           # 32-bit
         """
-        return hash(frozenset(tuple(self._Y.iteritems())))
+        return hash(frozenset(tuple(six.iteritems(self._Y))))
 
     def __eq__(self, other):
         r"""
@@ -278,7 +281,7 @@ class NakajimaMonomial(Element):
         if not self._Y:
             return "\\boldsymbol{1}"
 
-        L = sorted(self._Y.iteritems(), key=lambda x:(x[0][0],x[0][1]))
+        L = sorted(six.iteritems(self._Y), key=lambda x:(x[0][0],x[0][1]))
         return_str = ''
         for x in L:
             if x[1] != 1:
@@ -375,7 +378,7 @@ class NakajimaMonomial(Element):
         for a in range(k,K+1):
             if (i,a) not in d:
                 d[(i,a)] = 0
-        S = sorted((x for x in d.iteritems() if x[0][0] == i), key=lambda x: x[0][1])
+        S = sorted((x for x in six.iteritems(d) if x[0][0] == i), key=lambda x: x[0][1])
         return max([0]+[sum(S[k][1] for k in range(s)) for s in range(1,len(S)+1)])
 
     def _ke(self, i):
@@ -439,7 +442,7 @@ class NakajimaMonomial(Element):
                 continue
             else:
                 d[(i,a)] = 0
-        S = sorted((x for x in d.iteritems() if x[0][0] == i), key=lambda x: x[0][1])
+        S = sorted((x for x in six.iteritems(d) if x[0][0] == i), key=lambda x: x[0][1])
         sum = 0
         phi = self.phi(i)
         for var,exp in S:
@@ -510,7 +513,7 @@ class NakajimaMonomial(Element):
             if cm[j_index,i-shift] != 0:
                 Aik[(j, (ke-1))] = cm[j_index,i-shift]
         # Multiply by Aik
-        for key,value in Aik.iteritems():
+        for key,value in six.iteritems(Aik):
             if key in newdict:
                 if newdict[key] == -value: # The result would be a 0 exponent
                     del newdict[key]
@@ -559,7 +562,7 @@ class NakajimaMonomial(Element):
             if cm[j_index,i-shift] != 0:
                 Aik[(j, (kf+1))] = -cm[j_index,i-shift]
         # Multiply by Aik
-        for key,value in Aik.iteritems():
+        for key,value in six.iteritems(Aik):
             if key in newdict:
                 if newdict[key] == -value: # The result would be a 0 exponent
                     del newdict[key]
