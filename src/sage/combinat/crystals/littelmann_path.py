@@ -34,8 +34,8 @@ from sage.categories.highest_weight_crystals import HighestWeightCrystals
 from sage.categories.regular_crystals import RegularCrystals
 from sage.categories.classical_crystals import ClassicalCrystals
 from sage.categories.infinite_enumerated_sets import InfiniteEnumeratedSets
-from sage.categories.affine_derived_crystals import (RegularAffineDerivedSubalgebraCrystals,
-                                                     KirillovReshetikhinCrystals)
+from sage.categories.loop_crystals import (RegularLoopCrystals,
+                                           KirillovReshetikhinCrystals)
 from sage.combinat.root_system.cartan_type import CartanType
 from sage.combinat.root_system.weyl_group import WeylGroup
 from sage.combinat.crystals.littelmann_path_backend import LittelmannPath
@@ -225,7 +225,7 @@ class CrystalOfLSPaths(UniqueRepresentation, Parent):
                 if sum(self.weight[i] for i in cl) == 1:
                     cat = KirillovReshetikhinCrystals()
                 else:
-                    cat = RegularAffineDerivedSubalgebraCrystals().Finite()
+                    cat = RegularLoopCrystals().Finite()
                 Parent.__init__(self, category=cat)
         else:
             Parent.__init__(self, category=ClassicalCrystals())
@@ -934,11 +934,11 @@ class CrystalOfProjectedLevelZeroLSPaths(CrystalOfLSPaths):
                 sage: b = LS.module_generators[0]
                 sage: c = b.f(1).f(3).f(2)
                 sage: c.weyl_group_representation()
-                [s2*s3*s1, s3*s1]
+                [s2*s1*s3, s1*s3]
             """
             cartan = self.parent().weight.parent().cartan_type().classical()
             I = cartan.index_set()
-            W = WeylGroup(cartan,prefix='s')
+            W = WeylGroup(cartan, prefix='s', implementation="permutation")
             WLR = self.parent().weight_lattice_realization()
             B = list(WLR.basis())
             def to_weight(x):
@@ -1103,7 +1103,7 @@ class CrystalOfProjectedLevelZeroLSPaths(CrystalOfLSPaths):
             ct = P.cartan_type()
             cartan = ct.classical()
             Qv = RootSystem(cartan).coroot_lattice()
-            W = WeylGroup(cartan,prefix='s')
+            W = WeylGroup(cartan, prefix='s', implementation="permutation")
             J = tuple(weight.weyl_stabilizer())
             L = self.weyl_group_representation()
             if ct.is_untwisted_affine() or ct.type() == 'BC':
@@ -1112,7 +1112,7 @@ class CrystalOfProjectedLevelZeroLSPaths(CrystalOfLSPaths):
             else:
                 untwisted = False
                 cartan_dual = cartan.dual()
-                Wd = WeylGroup(cartan_dual, prefix='s')
+                Wd = WeylGroup(cartan_dual, prefix='s', implementation="permutation")
                 G = Wd.quantum_bruhat_graph(J)
                 Qd = RootSystem(cartan_dual).root_lattice()
                 dualize = lambda x: Qv.from_vector(x.to_vector())

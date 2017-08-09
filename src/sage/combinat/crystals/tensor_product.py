@@ -100,6 +100,8 @@ class CrystalOfWords(UniqueRepresentation, Parent):
         """
         return self.element_class(self, list(crystalElements))
 
+    class Element(TensorProductOfCrystalsElement):
+        pass
 
 class TensorProductOfCrystals(CrystalOfWords):
     r"""
@@ -241,7 +243,8 @@ class TensorProductOfCrystals(CrystalOfWords):
     It has `8` elements::
 
         sage: T.list()
-        [[2, 1, 1], [2, 1, 2], [2, 1, 3], [3, 1, 3], [3, 2, 3], [3, 1, 1], [3, 1, 2], [3, 2, 2]]
+        [[2, 1, 1], [2, 1, 2], [2, 1, 3], [3, 1, 3],
+         [3, 2, 3], [3, 1, 1], [3, 1, 2], [3, 2, 2]]
 
     One can also check the Cartan type of the crystal::
 
@@ -259,7 +262,7 @@ class TensorProductOfCrystals(CrystalOfWords):
         24
         sage: TestSuite(T).run()
         sage: T.module_generators
-        [[[[1], [2]], [[1]]], [[[2], [3]], [[1]]]]
+        ([[[1], [2]], [[1]]], [[[2], [3]], [[1]]])
         sage: [x.weight() for x in T.module_generators]
         [(2, 1, 0, 0), (1, 1, 1, 0)]
 
@@ -489,7 +492,7 @@ class TensorProductOfCrystalsWithGenerators(TensorProductOfCrystals):
         Parent.__init__(self, category = category)
         self.crystals = crystals
         self._cartan_type = cartan_type
-        self.module_generators = [ self(*x) for x in generators ]
+        self.module_generators = tuple([self(*x) for x in generators])
 
     def _repr_(self):
         """
@@ -619,13 +622,15 @@ class FullTensorProductOfRegularCrystals(FullTensorProductOfCrystals):
     """
     Full tensor product of regular crystals.
     """
-    Element = TensorProductOfRegularCrystalsElement
+    class Element(TensorProductOfRegularCrystalsElement):
+        pass
 
 class TensorProductOfRegularCrystalsWithGenerators(TensorProductOfCrystalsWithGenerators):
     """
     Tensor product of regular crystals with a generating set.
     """
-    Element = TensorProductOfRegularCrystalsElement
+    class Element(TensorProductOfRegularCrystalsElement):
+        pass
 
 #########################################################
 ## Crystal of tableaux
@@ -729,7 +734,7 @@ class CrystalOfTableaux(CrystalOfWords):
         sage: T.cardinality()
         48
         sage: T.module_generators
-        [[+++, [[1]]]]
+        ([+++, [[1]]],)
         sage: TestSuite(T).run()
 
         sage: T = crystals.Tableaux(['D',3],shape=[3/2,1/2,-1/2]); T
@@ -737,7 +742,7 @@ class CrystalOfTableaux(CrystalOfWords):
         sage: T.cardinality()
         20
         sage: T.module_generators
-        [[++-, [[1]]]]
+        ([++-, [[1]]],)
         sage: TestSuite(T).run()
 
     TESTS:
@@ -837,13 +842,13 @@ class CrystalOfTableaux(CrystalOfWords):
             elif all(shape[-1]<0 for shape in spin_shapes):
                 S = CrystalOfSpinsMinus(cartan_type)
             else:
-                raise ValueError("In type D spins should all be positive or negative")
+                raise ValueError("in type D spins should all be positive or negative")
         else:
             if any( i < 0 for shape in spin_shapes for i in shape):
                 raise ValueError("shapes should all be partitions")
             S = CrystalOfSpins(cartan_type)
-        B = CrystalOfTableaux(cartan_type, shapes = shapes)
-        T = TensorProductOfCrystals(S,B, generators=[[S.module_generators[0],x] for x in B.module_generators])
+        B = CrystalOfTableaux(cartan_type, shapes=shapes)
+        T = TensorProductOfCrystals(S, B, generators=[[S.module_generators[0],x] for x in B.module_generators])
         T.rename("The crystal of tableaux of type %s and shape(s) %s"%(cartan_type, list(list(shape) for shape in spin_shapes)))
         T.shapes = spin_shapes
         return T
@@ -891,7 +896,7 @@ class CrystalOfTableaux(CrystalOfWords):
         crystal of given shape. The module generator is the unique tableau with equal
         shape and content.
 
-        EXAMPLE::
+        EXAMPLES::
 
             sage: T = crystals.Tableaux(['D',3], shape = [1,1])
             sage: T.module_generator([1,1])
@@ -911,12 +916,12 @@ class CrystalOfTableaux(CrystalOfWords):
         type = self.cartan_type()
         if type[0] == 'D' and len(shape) == type[1] and shape[type[1]-1] < 0:
             invert = True
-            shape = shape[:-1]+(-shape[type[1]-1],)
+            shape = shape[:-1] + (-shape[type[1]-1],)
         else:
             invert = False
         p = Partition(shape).conjugate()
         # The column canonical tableau, read by columns
-        module_generator = flatten([[p[j]-i for i in range(p[j])] for j in range(len(p))])
+        module_generator = flatten([[val-i for i in range(val)] for val in p])
         if invert:
             module_generator = [(-x if x == type[1] else x) for x in module_generator]
         return self(list=[self.letters(x) for x in module_generator])
@@ -936,10 +941,12 @@ class CrystalOfTableaux(CrystalOfWords):
         """
         return self.element_class(self, *args, **options)
 
-CrystalOfTableaux.Element = CrystalOfTableauxElement
+    class Element(CrystalOfTableauxElement):
+        pass
 
 
 # deprecations from trac:18555
 from sage.misc.superseded import deprecated_function_alias
 TensorProductOfCrystals.global_options=deprecated_function_alias(18555, TensorProductOfCrystals.options)
 TensorProductOfCrystalsOptions=deprecated_function_alias(18555, TensorProductOfCrystals.options)
+

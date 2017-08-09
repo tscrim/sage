@@ -25,27 +25,27 @@ from __future__ import division, print_function
 from six.moves import range
 
 from sage.misc.cachefunc import cached_method
-from sage.misc.abstract_method import abstract_method
 from sage.misc.lazy_attribute import lazy_attribute
 from sage.misc.functional import is_even, is_odd
-from sage.functions.other import floor, ceil
+from sage.functions.other import floor
 from sage.combinat.combinat import CombinatorialObject
 from sage.structure.parent import Parent
 from sage.categories.crystals import CrystalMorphism
-from sage.categories.affine_derived_crystals import KirillovReshetikhinCrystals
+from sage.categories.loop_crystals import KirillovReshetikhinCrystals
 from sage.categories.homset import Hom
 from sage.categories.map import Map
 from sage.rings.integer import Integer
 from sage.rings.all import QQ
-from sage.combinat.crystals.affine import AffineCrystalFromClassical, \
-  AffineCrystalFromClassicalElement, AffineCrystalFromClassicalAndPromotion, \
-  AffineCrystalFromClassicalAndPromotionElement
+from sage.combinat.crystals.affine import (AffineCrystalFromClassical,
+                                           AffineCrystalFromClassicalElement,
+                                           AffineCrystalFromClassicalAndPromotion,
+                                           AffineCrystalFromClassicalAndPromotionElement)
 from sage.combinat.crystals.highest_weight_crystals import HighestWeightCrystal
 from sage.combinat.crystals.littelmann_path import CrystalOfProjectedLevelZeroLSPaths
 from sage.combinat.crystals.direct_sum import DirectSumOfCrystals
 from sage.combinat.root_system.cartan_type import CartanType
 from sage.combinat.root_system.root_system import RootSystem
-from sage.combinat.crystals.tensor_product import CrystalOfTableaux, TensorProductOfCrystals
+from sage.combinat.crystals.tensor_product import CrystalOfTableaux
 from sage.combinat.tableau import Tableau
 from sage.combinat.partition import Partition, Partitions
 from sage.combinat.integer_vector import IntegerVectors
@@ -445,7 +445,7 @@ class KirillovReshetikhinGenericCrystal(AffineCrystalFromClassical):
     ``cartan_type``.
     """
 
-    def __init__(self, cartan_type, r, s, dual = None):
+    def __init__(self, cartan_type, r, s, dual=None):
         r"""
         Initializes a generic Kirillov-Reshetikhin crystal.
 
@@ -487,7 +487,7 @@ class KirillovReshetikhinGenericCrystal(AffineCrystalFromClassical):
         EXAMPLES::
 
             sage: K = crystals.KirillovReshetikhin(['A', 4, 1], 2, 1)
-            sage: K(columns=[[2,1]]) # indirect doctest
+            sage: K(columns=[[2,1]])
             [[1], [2]]
         """
         from sage.combinat.rigged_configurations.kr_tableaux import KirillovReshetikhinTableauxElement
@@ -532,11 +532,11 @@ class KirillovReshetikhinGenericCrystal(AffineCrystalFromClassical):
         r = self.r()
         s = self.s()
         weight = s*Lambda[r] - s*Lambda[0] * Lambda[r].level() / Lambda[0].level()
-        return [ b for b in self.module_generators if b.weight() == weight][0]
+        return [b for b in self.module_generators if b.weight() == weight][0]
 
     def r(self):
         """
-        Returns r of the underlying Kirillov-Reshetikhin crystal `B^{r,s}`
+        Return `r` of the underlying Kirillov-Reshetikhin crystal `B^{r,s}`.
 
         EXAMPLES::
 
@@ -548,7 +548,7 @@ class KirillovReshetikhinGenericCrystal(AffineCrystalFromClassical):
 
     def s(self):
         """
-        Returns s of the underlying Kirillov-Reshetikhin crystal `B^{r,s}`
+        Return `s` of the underlying Kirillov-Reshetikhin crystal `B^{r,s}`.
 
         EXAMPLES::
 
@@ -682,16 +682,18 @@ KirillovReshetikhinGenericCrystal.Element = KirillovReshetikhinGenericCrystalEle
 class KirillovReshetikhinCrystalFromPromotion(KirillovReshetikhinGenericCrystal,
                                               AffineCrystalFromClassicalAndPromotion):
     r"""
-    This generic class assumes that the Kirillov-Reshetikhin crystal is constructed
-    from a classical crystal 'classical_decomposition' and an automorphism 'promotion' and its inverse
-    which corresponds to a Dynkin diagram automorphism 'dynkin_diagram_automorphism'.
+    This generic class assumes that the Kirillov-Reshetikhin crystal is
+    constructed from a classical crystal using the
+    ``classical_decomposition`` and an automorphism ``promotion``
+    and its inverse, which corresponds to a Dynkin diagram automorphism
+    ``dynkin_diagram_automorphism``.
 
     Each instance using this class needs to implement the methods:
 
-    - classical_decomposition
-    - promotion
-    - promotion_inverse
-    - dynkin_diagram_automorphism
+    - ``classical_decomposition``
+    - ``promotion``
+    - ``promotion_inverse``
+    - ``dynkin_diagram_automorphism``
     """
     def __init__(self, cartan_type, r, s):
         r"""
@@ -703,8 +705,10 @@ class KirillovReshetikhinCrystalFromPromotion(KirillovReshetikhinGenericCrystal,
             sage: TestSuite(K).run()
         """
         KirillovReshetikhinGenericCrystal.__init__(self, cartan_type, r, s)
-        AffineCrystalFromClassicalAndPromotion.__init__(self, cartan_type, self.classical_decomposition(),
-                                                        self.promotion(), self.promotion_inverse(),
+        AffineCrystalFromClassicalAndPromotion.__init__(self, cartan_type,
+                                                        self.classical_decomposition(),
+                                                        self.promotion(),
+                                                        self.promotion_inverse(),
                                                         self.dynkin_diagram_automorphism(0),
                                                         KirillovReshetikhinCrystals())
 
@@ -739,7 +743,8 @@ class KR_type_A(KirillovReshetikhinCrystalFromPromotion):
             sage: K.classical_decomposition()
             The crystal of tableaux of type ['A', 3] and shape(s) [[2, 2]]
         """
-        return CrystalOfTableaux(self.cartan_type().classical(), shape = [self.s() for i in range(1,self.r()+1)])
+        return CrystalOfTableaux(self.cartan_type().classical(),
+                                 shape=[self.s()]*self.r())
 
     @cached_method
     def promotion(self):
@@ -808,8 +813,9 @@ class KR_type_A(KirillovReshetikhinCrystalFromPromotion):
 
 class KR_type_vertical(KirillovReshetikhinCrystalFromPromotion):
     r"""
-    Class of Kirillov-Reshetikhin crystals `B^{r,s}` of type `D_n^{(1)}` for `r\le n-2`,
-    `B_n^{(1)}` for `r<n`, and `A_{2n-1}^{(2)}` for `r\le n`.
+    Class of Kirillov-Reshetikhin crystals `B^{r,s}` of type
+    `D_n^{(1)}` for `r \le n-2`, `B_n^{(1)}` for `r < n`, and
+    `A_{2n-1}^{(2)}` for `r \le n`.
 
     EXAMPLES::
 
@@ -831,21 +837,24 @@ class KR_type_vertical(KirillovReshetikhinCrystalFromPromotion):
 
         sage: K = crystals.KirillovReshetikhin(['B',3,1], 1,1)
         sage: [[b,b.f(0)] for b in K]
-        [[[[1]], None], [[[2]], None], [[[3]], None], [[[0]], None], [[[-3]], None], [[[-2]], [[1]]], [[[-1]], [[2]]]]
+        [[[[1]], None], [[[2]], None], [[[3]], None], [[[0]], None],
+         [[[-3]], None], [[[-2]], [[1]]], [[[-1]], [[2]]]]
 
         sage: K = crystals.KirillovReshetikhin(['A',5,2], 1,1)
         sage: [[b,b.f(0)] for b in K]
-        [[[[1]], None], [[[2]], None], [[[3]], None], [[[-3]], None], [[[-2]], [[1]]], [[[-1]], [[2]]]]
+        [[[[1]], None], [[[2]], None], [[[3]], None], [[[-3]], None],
+         [[[-2]], [[1]]], [[[-1]], [[2]]]]
     """
 
     def classical_decomposition(self):
         r"""
-        Specifies the classical crystal underlying the Kirillov-Reshetikhin crystal of type `D_n^{(1)}`,
-        `B_n^{(1)}`, and `A_{2n-1}^{(2)}`.
+        Specifies the classical crystal underlying the Kirillov-Reshetikhin
+        crystal of type `D_n^{(1)}`, `B_n^{(1)}`, and `A_{2n-1}^{(2)}`.
 
-        It is given by `B^{r,s} \cong \bigoplus_\Lambda B(\Lambda)` where `\Lambda` are weights obtained from
-        a rectangle of width `s` and height `r` by removing verticle dominoes. Here we identify the fundamental
-        weight `\Lambda_i` with a column of height `i`.
+        It is given by `B^{r,s} \cong \bigoplus_\Lambda B(\Lambda)`,
+        where `\Lambda` are weights obtained from a rectangle of width `s`
+        and height `r` by removing verticle dominoes. Here we identify
+        the fundamental weight `\Lambda_i` with a column of height `i`.
 
         EXAMPLES::
 
@@ -854,7 +863,7 @@ class KR_type_vertical(KirillovReshetikhinCrystalFromPromotion):
             The crystal of tableaux of type ['D', 4] and shape(s) [[], [1, 1], [2, 2]]
         """
         return CrystalOfTableaux(self.cartan_type().classical(),
-                                 shapes = vertical_dominoes_removed(self.r(),self.s()))
+                                 shapes=vertical_dominoes_removed(self.r(), self.s()))
 
     @cached_method
     def promotion(self):
@@ -883,7 +892,7 @@ class KR_type_vertical(KirillovReshetikhinCrystalFromPromotion):
         T = self.classical_decomposition()
         ind = list(T.index_set())
         ind.remove(1)
-        return CrystalDiagramAutomorphism(T, self.promotion_on_highest_weight_vectors(), ind)
+        return CrystalDiagramAutomorphism(T, self.promotion_on_highest_weight_vector, ind)
 
     def promotion_inverse(self):
         """
@@ -924,7 +933,24 @@ class KR_type_vertical(KirillovReshetikhinCrystalFromPromotion):
         aut = [1, 0] + list(range(2, self.cartan_type().rank()))
         return aut[i]
 
-    @cached_method
+    def promotion_on_highest_weight_vector(self, b):
+        """
+        Calculates promotion on a `{2,3,...,n}` highest weight vector ``b``.
+
+        EXAMPLES::
+
+            sage: K = crystals.KirillovReshetikhin(['D',4,1], 2,2)
+            sage: T = K.classical_decomposition()
+            sage: hw = [ b for b in T if all(b.epsilon(i)==0 for i in [2,3,4]) ]
+            sage: [K.promotion_on_highest_weight_vector(b) for b in hw]
+            [[[1, 2], [-2, -1]], [[2, 2], [-2, -1]], [[1, 2], [3, -1]],
+             [[2], [-2]], [[1, 2], [2, -2]], [[2, 2], [-1, -1]],
+             [[2, 2], [3, -1]], [[2, 2], [3, 3]], [], [[1], [2]],
+             [[1, 1], [2, 2]], [[2], [-1]], [[1, 2], [2, -1]],
+             [[2], [3]], [[1, 2], [2, 3]]]
+        """
+        return self.from_pm_diagram_to_highest_weight_vector(self.from_highest_weight_vector_to_pm_diagram(b).sigma())
+
     def promotion_on_highest_weight_vectors(self):
         """
         Calculates promotion on `{2,3,...,n}` highest weight vectors.
@@ -934,13 +960,15 @@ class KR_type_vertical(KirillovReshetikhinCrystalFromPromotion):
             sage: K = crystals.KirillovReshetikhin(['D',4,1], 2,2)
             sage: T = K.classical_decomposition()
             sage: hw = [ b for b in T if all(b.epsilon(i)==0 for i in [2,3,4]) ]
-            sage: [K.promotion_on_highest_weight_vectors()(b) for b in hw]
-            [[[1, 2], [-2, -1]], [[2, 2], [-2, -1]], [[1, 2], [3, -1]], [[2], [-2]],
-            [[1, 2], [2, -2]], [[2, 2], [-1, -1]], [[2, 2], [3, -1]], [[2, 2], [3, 3]],
-            [], [[1], [2]], [[1, 1], [2, 2]], [[2], [-1]], [[1, 2], [2, -1]], [[2], [3]],
-            [[1, 2], [2, 3]]]
+            sage: f = K.promotion_on_highest_weight_vectors()
+            doctest:...: DeprecationWarning: Call self.promotion_on_highest_weight_vector directly
+            See http://trac.sagemath.org/22429 for details.
+            sage: f(hw[0])
+            [[1, 2], [-2, -1]]
         """
-        return lambda b: self.from_pm_diagram_to_highest_weight_vector(self.from_highest_weight_vector_to_pm_diagram(b).sigma())
+        from sage.misc.superseded import deprecation
+        deprecation(22429, "Call self.promotion_on_highest_weight_vector directly")
+        return self.promotion_on_highest_weight_vector
 
     def from_highest_weight_vector_to_pm_diagram(self, b):
         """
@@ -967,7 +995,7 @@ class KR_type_vertical(KirillovReshetikhinCrystalFromPromotion):
             sage: all(K.from_pm_diagram_to_highest_weight_vector(K.from_highest_weight_vector_to_pm_diagram(b)) == b for b in hw)
             True
         """
-        n = self.cartan_type().rank()-1
+        n = self.cartan_type().rank() - 1
         inner = Partition([Integer(b.weight()[i]) for i in range(1,n+1)])
         inter = Partition([len([i for i in r if i>0]) for r in b.to_tableau()])
         outer = b.to_tableau().shape()
@@ -986,9 +1014,10 @@ class KR_type_vertical(KirillovReshetikhinCrystalFromPromotion):
             sage: K.from_pm_diagram_to_highest_weight_vector(pm)
             [[2], [-2]]
         """
-        u = [b for b in self.classical_decomposition().module_generators if b.to_tableau().shape() == pm.outer_shape()][0]
+        u = [b for b in self.classical_decomposition().module_generators
+             if b.to_tableau().shape() == pm.outer_shape()][0]
         ct = self.cartan_type()
-        rank = ct.rank()-1
+        rank = ct.rank() - 1
         ct_type = ct.classical().type()
         assert ct_type in ['B', 'C', 'D']
         ulist = []
@@ -996,11 +1025,11 @@ class KR_type_vertical(KirillovReshetikhinCrystalFromPromotion):
             ulist += list(range(1, h + 1))
         for h in pm.heights_of_minus():
             if ct_type == 'D':
-                ulist += list(range(1,rank+1))+[rank-2-k for k in range(rank-1-h)]
+                ulist += list(range(1,rank+1)) + [rank-2-k for k in range(rank-1-h)]
             elif ct_type == 'B':
-                ulist += list(range(1,rank+1))+[rank-k for k in range(rank+1-h)]
+                ulist += list(range(1,rank+1)) + [rank-k for k in range(rank+1-h)]
             else:
-                ulist += list(range(1,rank+1))+[rank-1-k for k in range(rank-h)]
+                ulist += list(range(1,rank+1)) + [rank-1-k for k in range(rank-h)]
         for i in reversed(ulist):
             u = u.f(i)
         return u
@@ -1073,19 +1102,22 @@ class KR_type_E6(KirillovReshetikhinCrystalFromPromotion):
         """
         La = self.cartan_type().classical().root_system().weight_lattice().fundamental_weights()
         if self.r() in [1,6]:
-            dw = [self.s()*La[self.r()]]
+            dw = [self.s() * La[self.r()]]
         elif self.r() == 2:
-            dw = sum( ([k*La[2]] for k in range(self.s()+1)), [])
+            dw = [k*La[2] for k in range(self.s()+1)]
         else:
-            raise ValueError
-        return DirectSumOfCrystals([HighestWeightCrystal(dominant_weight) for dominant_weight in dw], keepkey = False)
+            raise NotImplementedError
+        return DirectSumOfCrystals([HighestWeightCrystal(dominant_weight)
+                                    for dominant_weight in dw],
+                                   keepkey=False)
 
     def dynkin_diagram_automorphism(self, i):
         r"""
-        Specifies the Dynkin diagram automorphism underlying the promotion action on the crystal
-        elements. The automorphism needs to map node 0 to some other Dynkin node.
+        Specifies the Dynkin diagram automorphism underlying the promotion
+        action on the crystal elements.
 
-        Here we use the Dynkin diagram automorphism of order 3 which maps node 0 to node 1.
+        Here we use the Dynkin diagram automorphism of order 3 which maps
+        node 0 to node 1.
 
         EXAMPLES::
 
@@ -1098,41 +1130,45 @@ class KR_type_E6(KirillovReshetikhinCrystalFromPromotion):
 
     def affine_weight(self, b):
         r"""
-        Returns the affine level zero weight corresponding to the element b of the classical
-        crystal underlying self. For the coefficients to calculate the level, see Kac pg. 48.
+        Return the affine level zero weight corresponding to the element
+        ``b`` of the classical crystal underlying ``self``.
+
+        For the coefficients to calculate the level, see Table Aff 1
+        in [Ka1990]_.
 
         EXAMPLES::
 
             sage: K = crystals.KirillovReshetikhin(['E',6,1],2,1)
-            sage: [K.affine_weight(x.lift()) for x in K if all(x.epsilon(i) == 0 for i in [2,3,4,5])]
+            sage: [K.affine_weight(x.lift()) for x in K
+            ....:  if all(x.epsilon(i) == 0 for i in [2,3,4,5])]
             [(0, 0, 0, 0, 0, 0, 0),
-            (-2, 0, 1, 0, 0, 0, 0),
-            (-1, -1, 0, 0, 0, 1, 0),
-            (0, 0, 0, 0, 0, 0, 0),
-            (0, 0, 0, 0, 0, 1, -2),
-            (0, -1, 1, 0, 0, 0, -1),
-            (-1, 0, 0, 1, 0, 0, -1),
-            (-1, -1, 0, 0, 1, 0, -1),
-            (0, 0, 0, 0, 0, 0, 0),
-            (0, -2, 0, 1, 0, 0, 0)]
+             (-2, 0, 1, 0, 0, 0, 0),
+             (-1, -1, 0, 0, 0, 1, 0),
+             (0, 0, 0, 0, 0, 0, 0),
+             (0, 0, 0, 0, 0, 1, -2),
+             (0, -1, 1, 0, 0, 0, -1),
+             (-1, 0, 0, 1, 0, 0, -1),
+             (-1, -1, 0, 0, 1, 0, -1),
+             (0, 0, 0, 0, 0, 0, 0),
+             (0, -2, 0, 1, 0, 0, 0)]
         """
-        simple_roots = self.cartan_type().classical().root_system().ambient_space().simple_roots()
-        index_set = b.parent().index_set()
-        weight = [ Integer(b.weight().scalar( simple_roots[i] )) for i in index_set ]
-        E6_coeffs = [ 1, 2, 2, 3, 2, 1 ]
-        return tuple( [-sum([ weight[i-1] * E6_coeffs[i-1] for i in index_set ])] + weight )
-
+        cl = self.cartan_type().classical()
+        simple_roots = cl.root_system().ambient_space().simple_roots()
+        index_set = cl.index_set()
+        weight = [Integer(b.weight().scalar( simple_roots[i] )) for i in index_set]
+        E6_coeffs = [1, 2, 2, 3, 2, 1]
+        return tuple([-sum(weight[i] * coeff for i,coeff in enumerate(E6_coeffs))] + weight)
 
     @cached_method
     def hw_auxiliary(self):
         r"""
-        Returns the `{2,3,4,5}` highest weight elements of self.
+        Return the `{2,3,4,5}` highest weight elements of ``self``.
 
         EXAMPLES::
 
             sage: K = crystals.KirillovReshetikhin(['E',6,1],2,1)
             sage: K.hw_auxiliary()
-            [[], [[(2, -1), (1,)]],
+            ([], [[(2, -1), (1,)]],
              [[(5, -3), (-1, 3)]],
              [[(6, -2), (-6, 2)]],
              [[(5, -2, -6), (-6, 2)]],
@@ -1140,27 +1176,29 @@ class KR_type_E6(KirillovReshetikhinCrystalFromPromotion):
              [[(3, -1, -6), (1,)]],
              [[(4, -3, -6), (-1, 3)]],
              [[(1, -3), (-1, 3)]],
-             [[(-1,), (-1, 3)]]]
+             [[(-1,), (-1, 3)]])
         """
-        return [x for x in self.classical_decomposition() if all(x.epsilon(i) == 0 for i in [2,3,4,5])]
+        return tuple([x for x in self.classical_decomposition()
+                      if all(x.epsilon(i) == 0 for i in [2,3,4,5])])
 
     @cached_method
     def highest_weight_dict(self):
         r"""
-        Returns a dictionary between `{1,2,3,4,5}` highest weight elements, and a tuple of affine weights and its classical component.
+        Return a dictionary between `\{1,2,3,4,5\}`-highest weight elements,
+        and a tuple of affine weights and its classical component.
 
         EXAMPLES::
 
             sage: K = crystals.KirillovReshetikhin(['E',6,1],2,1)
-            sage: K.highest_weight_dict()
-            {[]: ((0, 0, 0, 0, 0, 0, 0), 0),
-             [[(2, -1), (1,)]]: ((-2, 0, 1, 0, 0, 0, 0), 1),
-             [[(6, -2), (-6, 2)]]: ((0, 0, 0, 0, 0, 0, 0), 1),
-             [[(3, -1, -6), (1,)]]: ((-1, 0, 0, 1, 0, 0, -1), 1),
-             [[(5, -2, -6), (-6, 2)]]: ((0, 0, 0, 0, 0, 1, -2), 1)}
+            sage: sorted(K.highest_weight_dict().items(), key=str)
+            [([[(2, -1), (1,)]], ((-2, 0, 1, 0, 0, 0, 0), 1)),
+             ([[(3, -1, -6), (1,)]], ((-1, 0, 0, 1, 0, 0, -1), 1)),
+             ([[(5, -2, -6), (-6, 2)]], ((0, 0, 0, 0, 0, 1, -2), 1)),
+             ([[(6, -2), (-6, 2)]], ((0, 0, 0, 0, 0, 0, 0), 1)),
+             ([], ((0, 0, 0, 0, 0, 0, 0), 0))]
         """
         hw = [x for x in self.hw_auxiliary() if x.epsilon(1) == 0]
-        dic = dict( ( x, tuple( [self.affine_weight(x), len(x)] ) ) for x in hw )
+        dic = {x: (self.affine_weight(x), len(x)) for x in hw}
         assert len(hw) == len(dic)
         return dic
 
@@ -1168,7 +1206,7 @@ class KR_type_E6(KirillovReshetikhinCrystalFromPromotion):
     def highest_weight_dict_inv(self):
         r"""
         Return a dictionary between a tuple of affine weights and a classical
-        component, and `{2,3,4,5,6}` highest weight elements.
+        component, and `\{2,3,4,5,6\}`-highest weight elements.
 
         EXAMPLES::
 
@@ -1181,23 +1219,24 @@ class KR_type_E6(KirillovReshetikhinCrystalFromPromotion):
              ((0, 0, 0, 0, 0, 0, 0), 1): [[(1, -3), (-1, 3)]]}
         """
         hw = [x for x in self.hw_auxiliary() if x.epsilon(6) == 0]
-        dic = dict( ( tuple( [self.affine_weight(x), len(x)] ), x ) for x in hw )
+        dic = {(self.affine_weight(x), len(x)): x for x in hw}
         assert len(hw) == len(dic)
         return dic
 
     def automorphism_on_affine_weight(self, weight):
         r"""
-        Acts with the Dynkin diagram automorphism on affine weights
+        Act with the Dynkin diagram automorphism on affine weights
         as outputted by the ``affine_weight`` method.
 
         EXAMPLES::
 
             sage: K = crystals.KirillovReshetikhin(['E',6,1],2,1)
-            sage: [[x[0], K.automorphism_on_affine_weight(x[0])] for x in K.highest_weight_dict().values()]
-            [[(0, 0, 0, 0, 0, 0, 0), (0, 0, 0, 0, 0, 0, 0)],
+            sage: [[x[0], K.automorphism_on_affine_weight(x[0])]
+            ....:  for x in K.highest_weight_dict().values()]
+            [[(-1, 0, 0, 1, 0, 0, -1), (-1, -1, 0, 0, 0, 1, 0)],
+             [(0, 0, 0, 0, 0, 0, 0), (0, 0, 0, 0, 0, 0, 0)],
              [(0, 0, 0, 0, 0, 0, 0), (0, 0, 0, 0, 0, 0, 0)],
              [(-2, 0, 1, 0, 0, 0, 0), (0, -2, 0, 1, 0, 0, 0)],
-             [(-1, 0, 0, 1, 0, 0, -1), (-1, -1, 0, 0, 0, 1, 0)],
              [(0, 0, 0, 0, 0, 1, -2), (-2, 0, 1, 0, 0, 0, 0)]]
         """
         f = self.dynkin_diagram_automorphism
@@ -1206,19 +1245,20 @@ class KR_type_E6(KirillovReshetikhinCrystalFromPromotion):
     @cached_method
     def promotion_on_highest_weight_vectors(self):
         r"""
-        Gives a dictionary of the promotion map on `{1,2,3,4,5}` highest
-        weight elements to `{2,3,4,5,6}` elements in ``self``.
+        Return a dictionary of the promotion map on `\{1,2,3,4,5\}`-highest
+        weight elements to `\{2,3,4,5,6\}`-highest weight elements
+        in ``self``.
 
         EXAMPLES::
 
-            sage: K = crystals.KirillovReshetikhin(['E',6,1],2,1)
+            sage: K = crystals.KirillovReshetikhin(['E',6,1], 2, 1)
             sage: dic = K.promotion_on_highest_weight_vectors()
-            sage: dic
-            {[]: [[(1, -3), (-1, 3)]],
-             [[(2, -1), (1,)]]: [[(-1,), (-1, 3)]],
-             [[(6, -2), (-6, 2)]]: [],
-             [[(3, -1, -6), (1,)]]: [[(5, -3), (-1, 3)]],
-             [[(5, -2, -6), (-6, 2)]]: [[(2, -1), (1,)]]}
+            sage: sorted(dic.items(), key=str)
+            [([[(2, -1), (1,)]], [[(-1,), (-1, 3)]]),
+             ([[(3, -1, -6), (1,)]], [[(5, -3), (-1, 3)]]),
+             ([[(5, -2, -6), (-6, 2)]], [[(2, -1), (1,)]]),
+             ([[(6, -2), (-6, 2)]], []),
+             ([], [[(1, -3), (-1, 3)]])]
         """
         dic = self.highest_weight_dict()
         dic_inv = self.highest_weight_dict_inv()
@@ -1226,8 +1266,8 @@ class KR_type_E6(KirillovReshetikhinCrystalFromPromotion):
         for (weight, i) in dic.values():
             dic_weight[weight] = dic_weight.get(weight, []) + [i]
         map_index = lambda i_list: max(i_list[1]) + min(i_list[1]) - i_list[0]
-        map_element = lambda x : tuple([ self.automorphism_on_affine_weight(dic[x][0]),
-                                         map_index((dic[x][1], dic_weight[dic[x][0]])) ])
+        map_element = lambda x: ( self.automorphism_on_affine_weight(dic[x][0]),
+                                  map_index((dic[x][1], dic_weight[dic[x][0]])) )
         return {x: dic_inv[map_element(x)] for x in dic}
 
     @cached_method
@@ -1238,12 +1278,12 @@ class KR_type_E6(KirillovReshetikhinCrystalFromPromotion):
 
         EXAMPLES::
 
-            sage: K = crystals.KirillovReshetikhin(['E',6,1], 2,1)
+            sage: K = crystals.KirillovReshetikhin(['E',6,1], 2, 1)
             sage: f = K.promotion_on_highest_weight_vectors_function()
             sage: f(K.module_generator().lift())
             [[(-1,), (-1, 3)]]
         """
-        return lambda x : self.promotion_on_highest_weight_vectors()[x]
+        return self.promotion_on_highest_weight_vectors().__getitem__
 
     @cached_method
     def promotion(self):
@@ -1265,7 +1305,7 @@ class KR_type_E6(KirillovReshetikhinCrystalFromPromotion):
         T = self.classical_decomposition()
         ind = [1,2,3,4,5]
         return CrystalDiagramAutomorphism(T, self.promotion_on_highest_weight_vectors(), ind,
-                         automorphism=self.dynkin_diagram_automorphism)
+                                          automorphism=self.dynkin_diagram_automorphism)
 
     @cached_method
     def promotion_inverse(self):
@@ -1287,7 +1327,8 @@ class KR_type_E6(KirillovReshetikhinCrystalFromPromotion):
 
 class KR_type_C(KirillovReshetikhinGenericCrystal):
     r"""
-    Class of Kirillov-Reshetikhin crystals `B^{r,s}` of type `C_n^{(1)}` for `r<n`.
+    Class of Kirillov-Reshetikhin crystals `B^{r,s}` of type `C_n^{(1)}`
+    for `r < n`.
 
     EXAMPLES::
 
@@ -1303,11 +1344,13 @@ class KR_type_C(KirillovReshetikhinGenericCrystal):
 
     def classical_decomposition(self):
         r"""
-        Specifies the classical crystal underlying the Kirillov-Reshetikhin crystal of type `C_n^{(1)}`.
+        Return the classical crystal underlying the Kirillov-Reshetikhin
+        crystal of type `C_n^{(1)}`.
 
-        It is given by `B^{r,s} \cong \bigoplus_\Lambda B(\Lambda)` where `\Lambda` are weights obtained from
-        a rectangle of width `s` and height `r` by removing horizontal dominoes. Here we identify the fundamental
-        weight `\Lambda_i` with a column of height `i`.
+        It is given by `B^{r,s} \cong \bigoplus_{\Lambda} B(\Lambda)`,
+        where `\Lambda` are weights obtained from a rectangle of width `s`
+        and height `r` by removing horizontal dominoes. Here we identify
+        the fundamental weight `\Lambda_i` with a column of height `i`.
 
         EXAMPLES::
 
@@ -1316,12 +1359,14 @@ class KR_type_C(KirillovReshetikhinGenericCrystal):
             The crystal of tableaux of type ['C', 3] and shape(s) [[], [2], [2, 2]]
         """
         return CrystalOfTableaux(self.cartan_type().classical(),
-                                 shapes = horizontal_dominoes_removed(self.r(),self.s()))
+                                 shapes=horizontal_dominoes_removed(self.r(), self.s()))
 
     def ambient_crystal(self):
         r"""
-        Returns the ambient crystal `B^{r,s}` of type `A_{2n+1}^{(2)}` associated to the Kirillov-Reshetikhin
-        crystal of type `C_n^{(1)}`. This ambient crystal is used to construct the zero arrows.
+        Return the ambient crystal `B^{r,s}` of type `A_{2n+1}^{(2)}`
+        associated to the Kirillov-Reshetikhin crystal of type `C_n^{(1)}`.
+
+        This ambient crystal is used to construct the zero arrows.
 
         EXAMPLES::
 
@@ -1329,13 +1374,14 @@ class KR_type_C(KirillovReshetikhinGenericCrystal):
             sage: K.ambient_crystal()
             Kirillov-Reshetikhin crystal of type ['B', 4, 1]^* with (r,s)=(2,3)
         """
-        return KashiwaraNakashimaTableaux(['A',2*self.cartan_type().classical().rank()+1,2], self.r(), self.s())
+        return KashiwaraNakashimaTableaux(['A',2*self.cartan_type().classical().rank()+1,2],
+                                          self.r(), self.s())
 
     @cached_method
     def ambient_dict_pm_diagrams(self):
         r"""
-        Gives a dictionary of all self-dual `\pm` diagrams for the ambient crystal.
-        Their key is their inner shape.
+        Return a dictionary of all self-dual `\pm` diagrams for the
+        ambient crystal whose keys are their inner shape.
 
         EXAMPLES::
 
@@ -1356,18 +1402,20 @@ class KR_type_C(KirillovReshetikhinGenericCrystal):
         ulist = []
         s = self.s()
         r = self.r()
-        m = s//2
+        m = s // 2
         for i in range(m+1):
             for la in IntegerVectors(m-i, min_length=r, max_length=r):
                 ulist.append(PMDiagram([[j,j] for j in la]+[[s-2*m+2*i]]))
-        return dict( (x.inner_shape(), x) for x in ulist )
+        return {x.inner_shape(): x for x in ulist}
 
     @cached_method
     def ambient_highest_weight_dict(self):
         r"""
-        Gives a dictionary of all `{2,...,n+1}`-highest weight vectors in the ambient crystal.
-        Their key is the inner shape of their corresponding `\pm` diagram, or equivalently, their
-        `{2,...,n+1}` weight.
+        Return a dictionary of all `\{2,\ldots,n+1\}`-highest weight vectors
+        in the ambient crystal.
+
+        The key is the inner shape of their corresponding `\pm` diagram,
+        or equivalently, their `\{2,\ldots,n+1\}` weight.
 
         EXAMPLES::
 
@@ -1377,13 +1425,14 @@ class KR_type_C(KirillovReshetikhinGenericCrystal):
         """
         A = self.ambient_dict_pm_diagrams()
         ambient = self.ambient_crystal()
-        return dict( (key, ambient.retract(ambient.from_pm_diagram_to_highest_weight_vector(A[key]))) for key in A )
+        return {key: ambient.retract(ambient.from_pm_diagram_to_highest_weight_vector(A[key]))
+                for key in A}
 
     @cached_method
     def highest_weight_dict(self):
         r"""
-        Gives a dictionary of the classical highest weight vectors of self.
-        Their key is their shape.
+        Return a dictionary of the classical highest weight vectors of
+        ``self`` whose keys are their shape.
 
         EXAMPLES::
 
@@ -1391,13 +1440,13 @@ class KR_type_C(KirillovReshetikhinGenericCrystal):
             sage: K.highest_weight_dict()
             {[]: [], [2]: [[1, 1]], [2, 2]: [[1, 1], [2, 2]]}
         """
-        return dict( (x.lift().to_tableau().shape(),x) for x in self.module_generators )
+        return {x.lift().to_tableau().shape(): x for x in self.module_generators}
 
     @cached_method
     def to_ambient_crystal(self):
         r"""
-        Provides a map from the Kirillov-Reshetikhin crystal of type `C_n^{(1)}` to the
-        ambient crystal of type `A_{2n+1}^{(2)}`.
+        Return a map from the Kirillov-Reshetikhin crystal of type
+        `C_n^{(1)}` to the ambient crystal of type `A_{2n+1}^{(2)}`.
 
         EXAMPLES::
 
@@ -1411,17 +1460,18 @@ class KR_type_C(KirillovReshetikhinGenericCrystal):
             sage: K.to_ambient_crystal()(b).parent()
             Kirillov-Reshetikhin crystal of type ['B', 4, 1]^* with (r,s)=(2,2)
         """
-        keys = list(self.highest_weight_dict())
-        pdict = dict( (self.highest_weight_dict()[key], self.ambient_highest_weight_dict()[key]) for key in keys )
+        hwd = self.highest_weight_dict()
+        ahwd = self.ambient_highest_weight_dict()
+        pdict = {hwd[key]: ahwd[key] for key in hwd}
         classical = self.cartan_type().classical()
-        return self.crystal_morphism( pdict, index_set=classical.index_set(),
-                                      automorphism=lambda i: i+1,
-                                      cartan_type=classical, check=False )
+        return self.crystal_morphism(pdict, index_set=classical.index_set(),
+                                     automorphism=lambda i: i+1,
+                                     cartan_type=classical, check=False)
 
     @cached_method
     def from_ambient_crystal(self):
         r"""
-        Provides a map from the ambient crystal of type `A_{2n+1}^{(2)}` to
+        Return a map from the ambient crystal of type `A_{2n+1}^{(2)}` to
         the Kirillov-Reshetikhin crystal of type `C_n^{(1)}`.
 
         Note that this map is only well-defined on type `C_n^{(1)}` elements
@@ -1434,16 +1484,17 @@ class KR_type_C(KirillovReshetikhinGenericCrystal):
             sage: K.from_ambient_crystal()(b)
             [[1, 1], [2, 2]]
         """
-        keys = list(self.highest_weight_dict())
-        pdict_inv = dict( (self.ambient_highest_weight_dict()[key], self.highest_weight_dict()[key])
-                          for key in keys )
+        hwd = self.highest_weight_dict()
+        ahwd = self.ambient_highest_weight_dict()
+        pdict_inv = {ahwd[key]: hwd[key] for key in hwd}
         ind = [j+1 for j in self.cartan_type().classical().index_set()]
-        return AmbientRetractMap( self, self.ambient_crystal(), pdict_inv, index_set=ind,
-                                  automorphism=lambda i : i-1 )
+        return AmbientRetractMap(self, self.ambient_crystal(), pdict_inv,
+                                 index_set=ind, automorphism=lambda i: i-1)
 
 class KR_type_CElement(KirillovReshetikhinGenericCrystalElement):
     r"""
-    Class for the elements in the Kirillov-Reshetikhin crystals `B^{r,s}` of type `C_n^{(1)}` for `r<n`.
+    Class for the elements in the Kirillov-Reshetikhin crystals `B^{r,s}`
+    of type `C_n^{(1)}` for `r<n`.
 
     EXAMPLES::
 
@@ -1451,11 +1502,10 @@ class KR_type_CElement(KirillovReshetikhinGenericCrystalElement):
         sage: type(K.module_generators[0])
         <class 'sage.combinat.crystals.kirillov_reshetikhin.KR_type_C_with_category.element_class'>
     """
-
     def e0(self):
         r"""
-        Gives `e_0` on self by mapping self to the ambient crystal, calculating `e_1 e_0` there and
-        pulling the element back.
+        Return `e_0` on ``self`` by mapping ``self`` to the ambient crystal,
+        calculating `e_1 e_0` there and pulling the element back.
 
         EXAMPLES::
 
@@ -1472,8 +1522,8 @@ class KR_type_CElement(KirillovReshetikhinGenericCrystalElement):
 
     def f0(self):
         r"""
-        Gives `f_0` on self by mapping self to the ambient crystal, calculating `f_1 f_0` there and
-        pulling the element back.
+        Return `f_0` on ``self`` by mapping ``self`` to the ambient crystal,
+        calculating `f_1 f_0` there and pulling the element back.
 
         EXAMPLES::
 
@@ -1523,11 +1573,11 @@ KR_type_C.Element = KR_type_CElement
 
 class KR_type_A2(KirillovReshetikhinGenericCrystal):
     r"""
-    Class of Kirillov-Reshetikhin crystals `B^{r,s}` of type `A_{2n}^{(2)}` for `1\le r \le n`
-    in the realization with classical subalgebra `B_n`. The Cartan type in this case is inputted as
-    the dual of `A_{2n}^{(2)}`.
+    Class of Kirillov-Reshetikhin crystals `B^{r,s}` of type `A_{2n}^{(2)}`
+    for `1 \leq r \leq n` in the realization with classical subalgebra `B_n`.
+    The Cartan type in this case is inputted as the dual of `A_{2n}^{(2)}`.
 
-    This is an alternative implementation to :class:`KR_type_box` which uses
+    This is an alternative implementation to :class:`KR_type_box` that uses
     the classical decomposition into type `C_n` crystals.
 
     EXAMPLES::
@@ -1541,8 +1591,9 @@ class KR_type_A2(KirillovReshetikhinGenericCrystal):
         [[1]]
         sage: b.e(0)
 
-    We can now check whether the two KR crystals of type `A_4^{(2)}` (namely the KR crystal and its dual
-    construction) are isomorphic up to relabelling of the edges::
+    We can now check whether the two KR crystals of type `A_4^{(2)}`
+    (namely the KR crystal and its dual construction) are isomorphic
+    up to relabelling of the edges::
 
         sage: C = CartanType(['A',4,2])
         sage: K = crystals.KirillovReshetikhin(C,1,1)
@@ -1554,16 +1605,50 @@ class KR_type_A2(KirillovReshetikhinGenericCrystal):
         sage: G.is_isomorphic(Gnew, edge_labels = True)
         True
     """
+    def module_generator(self):
+        r"""
+        Return the unique module generator of classical weight
+        `s \Lambda_r` of a Kirillov-Reshetikhin crystal `B^{r,s}`.
+
+        EXAMPLES::
+
+            sage: ct = CartanType(['A',8,2]).dual()
+            sage: K = crystals.KirillovReshetikhin(ct, 3, 5)
+            sage: K.module_generator()
+            [[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3]]
+
+        TESTS:
+
+        Check that :trac:`23028` is fixed::
+
+            sage: ct = CartanType(['A',8,2]).dual()
+            sage: K = crystals.KirillovReshetikhin(ct, 4, 3)
+            sage: K.module_generator()
+            [[1, 1, 1], [2, 2, 2], [3, 3, 3], [4, 4, 4]]
+            sage: K = crystals.KirillovReshetikhin(ct, 4, 1)
+            sage: K.module_generator()
+            [[1], [2], [3], [4]]
+        """
+        R = self.weight_lattice_realization()
+        Lambda = R.fundamental_weights()
+        r = self.r()
+        s = self.s()
+        weight = s*Lambda[r] - s*Lambda[0]
+        if r == self.cartan_type().rank() - 1:
+            weight += s*Lambda[r] # Special case for r == n
+        return [b for b in self.module_generators if b.weight() == weight][0]
 
     def classical_decomposition(self):
         r"""
-        Specifies the classical crystal underlying the Kirillov-Reshetikhin crystal of type `A_{2n}^{(2)}`
-        with `B_n` as classical subdiagram.
+        Return the classical crystal underlying the Kirillov-Reshetikhin
+        crystal of type `A_{2n}^{(2)}` with `B_n` as classical subdiagram.
 
-        It is given by `B^{r,s} \cong \bigoplus_\Lambda B(\Lambda)` where `B(\Lambda)` is a highest weight crystal of type
-        `B_n` of highest weight `\Lambda`. The sum is over all weights `\Lambda` obtained from
-        a rectangle of width `s` and height `r` by removing horizontal dominoes. Here we identify the fundamental
-        weight `\Lambda_i` with a column of height `i`.
+        It is given by `B^{r,s} \cong \bigoplus_{\Lambda} B(\Lambda)`,
+        where `B(\Lambda)` is a highest weight crystal of type `B_n`
+        of highest weight `\Lambda`. The sum is over all weights `\Lambda`
+        obtained from a rectangle of width `s` and height `r` by removing
+        horizontal dominoes. Here we identify the fundamental weight
+        `\Lambda_i` with a column of height `i`.
 
         EXAMPLES::
 
@@ -1577,8 +1662,11 @@ class KR_type_A2(KirillovReshetikhinGenericCrystal):
 
     def ambient_crystal(self):
         r"""
-        Returns the ambient crystal `B^{r,s}` of type `B_{n+1}^{(1)}` associated to the Kirillov-Reshetikhin
-        crystal of type `A_{2n}^{(2)}` dual. This ambient crystal is used to construct the zero arrows.
+        Return the ambient crystal `B^{r,s}` of type `B_{n+1}^{(1)}`
+        associated to the Kirillov-Reshetikhin crystal of type
+        `A_{2n}^{(2)}` dual.
+
+        This ambient crystal is used to construct the zero arrows.
 
         EXAMPLES::
 
@@ -1592,8 +1680,8 @@ class KR_type_A2(KirillovReshetikhinGenericCrystal):
     @cached_method
     def ambient_dict_pm_diagrams(self):
         r"""
-        Gives a dictionary of all self-dual `\pm` diagrams for the ambient crystal.
-        Their key is their inner shape.
+        Return a dictionary of all self-dual `\pm` diagrams for the
+        ambient crystal whose keys are their inner shape.
 
         EXAMPLES::
 
@@ -1613,18 +1701,20 @@ class KR_type_A2(KirillovReshetikhinGenericCrystal):
         ulist = []
         s = self.s()
         r = self.r()
-        m = s//2
+        m = s // 2
         for i in range(m+1):
             for la in IntegerVectors(m-i, min_length=r, max_length=r):
                 ulist.append(PMDiagram([[j,j] for j in la]+[[s-2*m+2*i]]))
-        return dict( (x.inner_shape(), x) for x in ulist )
+        return {x.inner_shape(): x for x in ulist}
 
     @cached_method
     def ambient_highest_weight_dict(self):
         r"""
-        Gives a dictionary of all `{2,...,n+1}`-highest weight vectors in the ambient crystal.
-        Their key is the inner shape of their corresponding `\pm` diagram, or equivalently, their
-        `{2,...,n+1}` weight.
+        Return a dictionary of all `\{2,\ldots,n+1\}`-highest weight vectors
+        in the ambient crystal.
+
+        The key is the inner shape of their corresponding `\pm` diagram,
+        or equivalently, their `\{2,\ldots,n+1\}` weight.
 
         EXAMPLES::
 
@@ -1635,13 +1725,14 @@ class KR_type_A2(KirillovReshetikhinGenericCrystal):
         """
         A = self.ambient_dict_pm_diagrams()
         ambient = self.ambient_crystal()
-        return dict( (key, ambient.retract(ambient.from_pm_diagram_to_highest_weight_vector(A[key]))) for key in A )
+        return {key: ambient.retract(ambient.from_pm_diagram_to_highest_weight_vector(A[key]))
+                for key in A}
 
     @cached_method
     def highest_weight_dict(self):
         r"""
-        Gives a dictionary of the classical highest weight vectors of self.
-        Their key is their shape.
+        Return a dictionary of the classical highest weight vectors
+        of ``self`` whose keys are their shape.
 
         EXAMPLES::
 
@@ -1650,13 +1741,13 @@ class KR_type_A2(KirillovReshetikhinGenericCrystal):
             sage: K.highest_weight_dict()
             {[]: [], [2]: [[1, 1]]}
         """
-        return dict( (x.lift().to_tableau().shape(),x) for x in self.module_generators )
+        return {x.lift().to_tableau().shape(): x for x in self.module_generators}
 
     @cached_method
     def to_ambient_crystal(self):
         r"""
-        Provides a map from the Kirillov-Reshetikhin crystal of type `A_{2n}^{(2)}` to the
-        ambient crystal of type `B_{n+1}^{(1)}`.
+        Return a map from the Kirillov-Reshetikhin crystal of type
+        `A_{2n}^{(2)}` to the ambient crystal of type `B_{n+1}^{(1)}`.
 
         EXAMPLES::
 
@@ -1672,17 +1763,18 @@ class KR_type_A2(KirillovReshetikhinGenericCrystal):
             sage: K.to_ambient_crystal()(b).parent()
             Kirillov-Reshetikhin crystal of type ['B', 3, 1] with (r,s)=(2,2)
         """
-        keys = self.highest_weight_dict()
-        pdict = dict( (self.highest_weight_dict()[key], self.ambient_highest_weight_dict()[key]) for key in keys )
+        hwd = self.highest_weight_dict()
+        ahwd = self.ambient_highest_weight_dict()
+        pdict = {hwd[key]: ahwd[key] for key in hwd}
         classical = self.cartan_type().classical()
-        return self.crystal_morphism( pdict, index_set=classical.index_set(),
-                                      automorphism=lambda i: i+1,
-                                      cartan_type=classical, check=False )
+        return self.crystal_morphism(pdict, index_set=classical.index_set(),
+                                     automorphism=lambda i: i+1,
+                                     cartan_type=classical, check=False)
 
     @cached_method
     def from_ambient_crystal(self):
         r"""
-        Provides a map from the ambient crystal of type `B_{n+1}^{(1)}` to
+        Return a map from the ambient crystal of type `B_{n+1}^{(1)}` to
         the Kirillov-Reshetikhin crystal of type `A_{2n}^{(2)}`.
 
         Note that this map is only well-defined on type `A_{2n}^{(2)}`
@@ -1696,17 +1788,17 @@ class KR_type_A2(KirillovReshetikhinGenericCrystal):
             sage: K.from_ambient_crystal()(b)
             [[1, 1]]
         """
-        keys = self.highest_weight_dict()
-        pdict_inv = dict( (self.ambient_highest_weight_dict()[key], self.highest_weight_dict()[key])
-                          for key in keys )
+        hwd = self.highest_weight_dict()
+        ahwd = self.ambient_highest_weight_dict()
+        pdict_inv = {ahwd[key]: hwd[key] for key in hwd}
         ind = [j+1 for j in self.cartan_type().classical().index_set()]
-        return AmbientRetractMap( self, self.ambient_crystal(), pdict_inv, index_set=ind,
-                                  automorphism=lambda i : i-1 )
+        return AmbientRetractMap(self, self.ambient_crystal(), pdict_inv, index_set=ind,
+                                 automorphism=lambda i: i-1)
 
 class KR_type_A2Element(KirillovReshetikhinGenericCrystalElement):
     r"""
-    Class for the elements in the Kirillov-Reshetikhin crystals `B^{r,s}` of type `A_{2n}^{(2)}` for `r<n`
-    with underlying classical algebra `B_n`.
+    Class for the elements in the Kirillov-Reshetikhin crystals `B^{r,s}` of
+    type `A_{2n}^{(2)}` for `r<n` with underlying classical algebra `B_n`.
 
     EXAMPLES::
 
@@ -1718,8 +1810,8 @@ class KR_type_A2Element(KirillovReshetikhinGenericCrystalElement):
 
     def e0(self):
         r"""
-        Gives `e_0` on self by mapping self to the ambient crystal, calculating `e_1 e_0` there and
-        pulling the element back.
+        Return `e_0` on ``self`` by mapping ``self`` to the ambient crystal,
+        calculating `e_1 e_0` there and pulling the element back.
 
         EXAMPLES::
 
@@ -1737,8 +1829,8 @@ class KR_type_A2Element(KirillovReshetikhinGenericCrystalElement):
 
     def f0(self):
         r"""
-        Gives `f_0` on self by mapping self to the ambient crystal, calculating `f_1 f_0` there and
-        pulling the element back.
+        Return `f_0` on ``self`` by mapping ``self`` to the ambient crystal,
+        calculating `f_1 f_0` there and pulling the element back.
 
         EXAMPLES::
 
@@ -1779,7 +1871,7 @@ class KR_type_A2Element(KirillovReshetikhinGenericCrystalElement):
 
             sage: C = CartanType(['A',4,2]).dual()
             sage: K = sage.combinat.crystals.kirillov_reshetikhin.KR_type_A2(C, 1, 1)
-            sage: b=K(rows=[[-1]])
+            sage: b = K(rows=[[-1]])
             sage: b.phi(0) # indirect doctest
             1
         """
@@ -1791,8 +1883,8 @@ KR_type_A2.Element = KR_type_A2Element
 
 class KR_type_box(KirillovReshetikhinGenericCrystal, AffineCrystalFromClassical):
     r"""
-    Class of Kirillov-Reshetikhin crystals `B^{r,s}` of type `A_{2n}^{(2)}` for `r\le n`
-    and type `D_{n+1}^{(2)}` for `r<n`.
+    Class of Kirillov-Reshetikhin crystals `B^{r,s}` of type `A_{2n}^{(2)}`
+    for `r\le n` and type `D_{n+1}^{(2)}` for `r<n`.
 
     EXAMPLES::
 
@@ -1825,11 +1917,12 @@ class KR_type_box(KirillovReshetikhinGenericCrystal, AffineCrystalFromClassical)
 
     def classical_decomposition(self):
         r"""
-        Specifies the classical crystal underlying the Kirillov-Reshetikhin crystal of type `A_{2n}^{(2)}`
-        and `D_{n+1}^{(2)}`.
+        Return the classical crystal underlying the Kirillov-Reshetikhin
+        crystal of type `A_{2n}^{(2)}` and `D_{n+1}^{(2)}`.
 
-        It is given by `B^{r,s} \cong \bigoplus_\Lambda B(\Lambda)` where `\Lambda` are weights obtained from
-        a rectangle of width `s` and height `r` by removing boxes. Here we identify the fundamental
+        It is given by `B^{r,s} \cong \bigoplus_{\Lambda} B(\Lambda)`,
+        where `\Lambda` are weights obtained from a rectangle of width `s`
+        and height `r` by removing boxes. Here we identify the fundamental
         weight `\Lambda_i` with a column of height `i`.
 
         EXAMPLES::
@@ -1846,8 +1939,10 @@ class KR_type_box(KirillovReshetikhinGenericCrystal, AffineCrystalFromClassical)
 
     def ambient_crystal(self):
         r"""
-        Returns the ambient crystal `B^{r,2s}` of type `C_n^{(1)}` associated to the Kirillov-Reshetikhin crystal.
-        This ambient crystal is used to construct the zero arrows.
+        Return the ambient crystal `B^{r,2s}` of type `C_n^{(1)}`
+        associated to the Kirillov-Reshetikhin crystal.
+
+        The ambient crystal is used to construct the zero arrows.
 
         EXAMPLES::
 
@@ -1862,8 +1957,8 @@ class KR_type_box(KirillovReshetikhinGenericCrystal, AffineCrystalFromClassical)
     @cached_method
     def highest_weight_dict(self):
         r"""
-        Gives a dictionary of the classical highest weight vectors of self.
-        Their key is 2 times their shape.
+        Return a dictionary of the classical highest weight vectors
+        of ``self`` whose keys are 2 times their shape.
 
         EXAMPLES::
 
@@ -1876,13 +1971,14 @@ class KR_type_box(KirillovReshetikhinGenericCrystal, AffineCrystalFromClassical)
              [4, 2]: [[1, 1], [2]],
              [4, 4]: [[1, 1], [2, 2]]}
         """
-        return dict( (Partition([2*i for i in x.lift().to_tableau().shape()]),x) for x in self.module_generators )
+        return {Partition([2*i for i in x.lift().to_tableau().shape()]): x
+                for x in self.module_generators}
 
     @cached_method
     def ambient_highest_weight_dict(self):
         r"""
-        Gives a dictionary of the classical highest weight vectors of the ambient crystal of self.
-        Their key is their shape.
+        Return a dictionary of the classical highest weight vectors of
+        the ambient crystal of ``self`` whose keys are their shape.
 
         EXAMPLES::
 
@@ -1895,7 +1991,8 @@ class KR_type_box(KirillovReshetikhinGenericCrystal, AffineCrystalFromClassical)
              [4, 2]: [[1, 1, 1, 1], [2, 2]],
              [4, 4]: [[1, 1, 1, 1], [2, 2, 2, 2]]}
         """
-        return dict( (x.lift().to_tableau().shape(),x) for x in self.ambient_crystal().module_generators )
+        return {x.lift().to_tableau().shape(): x
+                for x in self.ambient_crystal().module_generators}
 
     def similarity_factor(self):
         r"""
@@ -1911,7 +2008,7 @@ class KR_type_box(KirillovReshetikhinGenericCrystal, AffineCrystalFromClassical)
             {1: 2, 2: 2, 3: 2, 4: 1}
         """
         C = self.cartan_type().classical()
-        p = dict( (i,2) for i in C.index_set() )
+        p = {i: 2 for i in C.index_set()}
         if C.type() == 'B':
             p[C.rank()] = 1
         return p
@@ -1919,7 +2016,7 @@ class KR_type_box(KirillovReshetikhinGenericCrystal, AffineCrystalFromClassical)
     @cached_method
     def to_ambient_crystal(self):
         r"""
-        Provides a map from self to the ambient crystal of type `C_n^{(1)}`.
+        Return a map from ``self`` to the ambient crystal of type `C_n^{(1)}`.
 
         EXAMPLES::
 
@@ -1930,9 +2027,9 @@ class KR_type_box(KirillovReshetikhinGenericCrystal, AffineCrystalFromClassical)
             sage: [K.to_ambient_crystal()(b) for b in K]
             [[], [[1, 1]], [[2, 2]], [[-2, -2]], [[-1, -1]]]
         """
-        keys = self.highest_weight_dict()
-        pdict = dict( (self.highest_weight_dict()[key], self.ambient_highest_weight_dict()[key])
-                      for key in keys )
+        hwd = self.highest_weight_dict()
+        ahwd = self.ambient_highest_weight_dict()
+        pdict = {hwd[key]: ahwd[key] for key in hwd}
         classical = self.cartan_type().classical()
         return self.crystal_morphism( pdict, codomain=self.ambient_crystal(),
                                       index_set=classical.index_set(),
@@ -1942,7 +2039,7 @@ class KR_type_box(KirillovReshetikhinGenericCrystal, AffineCrystalFromClassical)
     @cached_method
     def from_ambient_crystal(self):
         r"""
-        Provides a map from the ambient crystal of type `C_n^{(1)}` to the
+        Return a map from the ambient crystal of type `C_n^{(1)}` to the
         Kirillov-Reshetikhin crystal ``self``.
 
         Note that this map is only well-defined on elements that are in the
@@ -1959,8 +2056,9 @@ class KR_type_box(KirillovReshetikhinGenericCrystal, AffineCrystalFromClassical)
             sage: K.from_ambient_crystal()(b)
             []
         """
-        keys = self.highest_weight_dict()
-        pdict_inv = dict( (self.ambient_highest_weight_dict()[key], self.highest_weight_dict()[key]) for key in keys )
+        hwd = self.highest_weight_dict()
+        ahwd = self.ambient_highest_weight_dict()
+        pdict_inv = {ahwd[key]: hwd[key] for key in hwd}
         return AmbientRetractMap( self, self.ambient_crystal(), pdict_inv,
                                   index_set=self.cartan_type().classical().index_set(),
                                   similarity_factor_domain=self.similarity_factor() )
@@ -1968,24 +2066,24 @@ class KR_type_box(KirillovReshetikhinGenericCrystal, AffineCrystalFromClassical)
 
 class KR_type_boxElement(KirillovReshetikhinGenericCrystalElement):
     r"""
-    Class for the elements in the Kirillov-Reshetikhin crystals `B^{r,s}` of type `A_{2n}^{(2)}` for `r\le n`
-    and type `D_{n+1}^{(2)}` for `r<n`.
+    Class for the elements in the Kirillov-Reshetikhin crystals `B^{r,s}` of
+    type `A_{2n}^{(2)}` for `r \leq n` and type `D_{n+1}^{(2)}` for `r < n`.
 
     EXAMPLES::
 
-        sage: K=crystals.KirillovReshetikhin(['A',4,2],1,2)
+        sage: K = crystals.KirillovReshetikhin(['A',4,2],1,2)
         sage: type(K.module_generators[0])
         <class 'sage.combinat.crystals.kirillov_reshetikhin.KR_type_box_with_category.element_class'>
     """
 
     def e0(self):
         r"""
-        Gives `e_0` on self by mapping self to the ambient crystal, calculating `e_0` there and
-        pulling the element back.
+        Return `e_0` on ``self`` by mapping ``self`` to the ambient crystal,
+        calculating `e_0` there and pulling the element back.
 
         EXAMPLES::
 
-            sage: K=crystals.KirillovReshetikhin(['A',4,2],1,1)
+            sage: K = crystals.KirillovReshetikhin(['A',4,2],1,1)
             sage: b = K(rows=[])
             sage: b.e(0) # indirect doctest
             [[-1]]
@@ -1997,12 +2095,12 @@ class KR_type_boxElement(KirillovReshetikhinGenericCrystalElement):
 
     def f0(self):
         r"""
-        Gives `f_0` on self by mapping self to the ambient crystal, calculating `f_0` there and
-        pulling the element back.
+        Return `f_0` on ``self`` by mapping ``self`` to the ambient crystal,
+        calculating `f_0` there and pulling the element back.
 
         EXAMPLES::
 
-            sage: K=crystals.KirillovReshetikhin(['A',4,2],1,1)
+            sage: K = crystals.KirillovReshetikhin(['A',4,2],1,1)
             sage: b = K(rows=[])
             sage: b.f(0) # indirect doctest
             [[1]]
@@ -2014,13 +2112,13 @@ class KR_type_boxElement(KirillovReshetikhinGenericCrystalElement):
 
     def epsilon0(self):
         r"""
-        Calculate `\varepsilon_0` of ``self`` by mapping the element
+        Return `\varepsilon_0` of ``self`` by mapping the element
         to the ambient crystal and calculating `\varepsilon_0` there.
 
         EXAMPLES::
 
             sage: K = crystals.KirillovReshetikhin(['A',4,2], 1,1)
-            sage: b=K(rows=[[1]])
+            sage: b = K(rows=[[1]])
             sage: b.epsilon(0) # indirect doctest
             2
         """
@@ -2029,13 +2127,13 @@ class KR_type_boxElement(KirillovReshetikhinGenericCrystalElement):
 
     def phi0(self):
         r"""
-        Calculate `\varphi_0` of ``self`` by mapping the element to
+        Return `\varphi_0` of ``self`` by mapping the element to
         the ambient crystal and calculating `\varphi_0` there.
 
         EXAMPLES::
 
             sage: K = crystals.KirillovReshetikhin(['D',3,2], 1,1)
-            sage: b=K(rows=[[-1]])
+            sage: b = K(rows=[[-1]])
             sage: b.phi(0) # indirect doctest
             2
         """
@@ -2101,12 +2199,15 @@ class KR_type_Bn(KirillovReshetikhinGenericCrystal):
 
     def classical_decomposition(self):
         r"""
-        Specifies the classical crystal underlying the Kirillov-Reshetikhin crystal `B^{n,s}` of type `B_n^{(1)}`.
+        Return the classical crystal underlying the Kirillov-Reshetikhin
+        crystal `B^{n,s}` of type `B_n^{(1)}`.
 
-        It is the same as for `r<n`, given by `B^{n,s} \cong \bigoplus_\Lambda B(\Lambda)` where `\Lambda` are
-        weights obtained from a rectangle of width `s/2` and height `n` by removing horizontal dominoes.
-        Here we identify the fundamental weight `\Lambda_i` with a column of height `i` for `i<n` and
-        a column of width `1/2` for `i=n`.
+        It is the same as for `r < n`, given by
+        `B^{n,s} \cong \bigoplus_{\Lambda} B(\Lambda)`, where `\Lambda` are
+        weights obtained from a rectangle of width `s/2` and height `n` by
+        removing horizontal dominoes. Here we identify the fundamental weight
+        `\Lambda_i` with a column of height `i` for `i<n` and a column of
+        width `1/2` for `i=n`.
 
         EXAMPLES::
 
@@ -2121,14 +2222,16 @@ class KR_type_Bn(KirillovReshetikhinGenericCrystal):
         r = self.r()
         shapes = vertical_dominoes_removed(r,floor(s/2))
         if is_odd(s):
-            shapes = [ [i+QQ(1)/QQ(2) for i in sh]+[QQ(1)/QQ(2)]*(r-len(sh)) for sh in shapes ]
-        return CrystalOfTableaux(self.cartan_type().classical(), shapes = shapes)
+            shapes = [[i+QQ(1)/QQ(2) for i in sh] + [QQ(1)/QQ(2)]*(r-len(sh))
+                      for sh in shapes]
+        return CrystalOfTableaux(self.cartan_type().classical(), shapes=shapes)
 
     def ambient_crystal(self):
         r"""
-        Returns the ambient crystal `B^{n,s}` of type `A_{2n-1}^{(2)}` associated to the Kirillov-Reshetikhin crystal;
-        see Lemma 4.2 of reference [4].
-        This ambient crystal is used to construct the zero arrows.
+        Return the ambient crystal `B^{n,s}` of type `A_{2n-1}^{(2)}`
+        associated to the Kirillov-Reshetikhin crystal.
+
+        The ambient crystal is used to construct the zero arrows.
 
         EXAMPLES::
 
@@ -2136,13 +2239,14 @@ class KR_type_Bn(KirillovReshetikhinGenericCrystal):
             sage: K.ambient_crystal()
             Kirillov-Reshetikhin crystal of type ['B', 3, 1]^* with (r,s)=(3,2)
         """
-        return KashiwaraNakashimaTableaux(['A', 2*self.cartan_type().classical().rank()-1,2], self.r(), self.s())
+        return KashiwaraNakashimaTableaux(['A', 2*self.cartan_type().classical().rank()-1,2],
+                                          self.r(), self.s())
 
     @cached_method
     def highest_weight_dict(self):
         r"""
-        Gives a dictionary of the classical highest weight vectors of self.
-        Their key is 2 times their shape.
+        Return a dictionary of the classical highest weight vectors
+        of ``self`` whose keys are 2 times their shape.
 
         EXAMPLES::
 
@@ -2153,13 +2257,14 @@ class KR_type_Bn(KirillovReshetikhinGenericCrystal):
             sage: K.highest_weight_dict()
             {(3, 1, 1): [+++, [[1]]], (3, 3, 3): [+++, [[1], [2], [3]]]}
         """
-        return dict( (tuple([2*i[1] for i in x.classical_weight()]),x) for x in self.module_generators )
+        return {tuple([2*i[1] for i in x.classical_weight()]): x
+                for x in self.module_generators}
 
     @cached_method
     def ambient_highest_weight_dict(self):
         r"""
-        Gives a dictionary of the classical highest weight vectors of the ambient crystal of self.
-        Their key is their shape.
+        Return a dictionary of the classical highest weight vectors of
+        the ambient crystal of ``self`` whose keys are their shape.
 
         EXAMPLES::
 
@@ -2174,7 +2279,8 @@ class KR_type_Bn(KirillovReshetikhinGenericCrystal):
              (3, 2, 2): [[1, 1, 1], [2, 2], [3, 3]],
              (3, 3, 3): [[1, 1, 1], [2, 2, 2], [3, 3, 3]]}
         """
-        return dict( (tuple([i[1] for i in x.classical_weight()]),x) for x in self.ambient_crystal().module_generators )
+        return {tuple([i[1] for i in x.classical_weight()]): x
+                for x in self.ambient_crystal().module_generators}
 
     def similarity_factor(self):
         r"""
@@ -2187,14 +2293,14 @@ class KR_type_Bn(KirillovReshetikhinGenericCrystal):
             {1: 2, 2: 2, 3: 1}
         """
         C = self.cartan_type().classical()
-        p = dict( (i,2) for i in C.index_set() )
+        p = {i:2 for i in C.index_set()}
         p[C.rank()] = 1
         return p
 
     @cached_method
     def to_ambient_crystal(self):
         r"""
-        Provides a map from self to the ambient crystal of type `A_{2n-1}^{(2)}`.
+        Return a map from self to the ambient crystal of type `A_{2n-1}^{(2)}`.
 
         EXAMPLES::
 
@@ -2203,9 +2309,9 @@ class KR_type_Bn(KirillovReshetikhinGenericCrystal):
             [[[1], [2], [3]], [[1], [2], [-3]], [[1], [3], [-2]], [[2], [3], [-1]], [[1], [-3], [-2]],
             [[2], [-3], [-1]], [[3], [-2], [-1]], [[-3], [-2], [-1]]]
         """
-        keys = self.highest_weight_dict()
-        pdict = dict( (self.highest_weight_dict()[key], self.ambient_highest_weight_dict()[key])
-                      for key in keys )
+        hwd = self.highest_weight_dict()
+        ahwd = self.ambient_highest_weight_dict()
+        pdict = {hwd[key]: ahwd[key] for key in hwd}
         classical = self.cartan_type().classical()
         return self.crystal_morphism( pdict, codomain=self.ambient_crystal(),
                                       index_set=classical.index_set(),
@@ -2215,7 +2321,7 @@ class KR_type_Bn(KirillovReshetikhinGenericCrystal):
     @cached_method
     def from_ambient_crystal(self):
         r"""
-        Provides a map from the ambient crystal of type `A_{2n-1}^{(2)}` to
+        Return a map from the ambient crystal of type `A_{2n-1}^{(2)}` to
         the Kirillov-Reshetikhin crystal ``self``.
 
         Note that this map is only well-defined on elements that are in the
@@ -2230,8 +2336,9 @@ class KR_type_Bn(KirillovReshetikhinGenericCrystal):
             sage: K.from_ambient_crystal()(b)
             [++-, []]
         """
-        keys = self.highest_weight_dict()
-        pdict_inv = dict( (self.ambient_highest_weight_dict()[key], self.highest_weight_dict()[key]) for key in keys )
+        hwd = self.highest_weight_dict()
+        ahwd = self.ambient_highest_weight_dict()
+        pdict_inv = {ahwd[key]: hwd[key] for key in hwd}
         return AmbientRetractMap( self, self.ambient_crystal(), pdict_inv,
                                   index_set=self.cartan_type().classical().index_set(),
                                   similarity_factor_domain=self.similarity_factor() )
@@ -2239,7 +2346,8 @@ class KR_type_Bn(KirillovReshetikhinGenericCrystal):
 
 class KR_type_BnElement(KirillovReshetikhinGenericCrystalElement):
     r"""
-    Class for the elements in the Kirillov-Reshetikhin crystals `B^{n,s}` of type `B_n^{(1)}`.
+    Class for the elements in the Kirillov-Reshetikhin crystals `B^{n,s}`
+    of type `B_n^{(1)}`.
 
     EXAMPLES::
 
@@ -2249,12 +2357,12 @@ class KR_type_BnElement(KirillovReshetikhinGenericCrystalElement):
     """
     def e0(self):
         r"""
-        Gives `e_0` on self by mapping self to the ambient crystal, calculating `e_0` there and
-        pulling the element back.
+        Return `e_0` on ``self`` by mapping ``self`` to the ambient crystal,
+        calculating `e_0` there and pulling the element back.
 
         EXAMPLES::
 
-            sage: K=crystals.KirillovReshetikhin(['B',3,1],3,1)
+            sage: K = crystals.KirillovReshetikhin(['B',3,1],3,1)
             sage: b = K.module_generators[0]
             sage: b.e(0) # indirect doctest
             [--+, []]
@@ -2266,8 +2374,8 @@ class KR_type_BnElement(KirillovReshetikhinGenericCrystalElement):
 
     def f0(self):
         r"""
-        Gives `f_0` on self by mapping self to the ambient crystal, calculating `f_0` there and
-        pulling the element back.
+        Return `f_0` on ``self`` by mapping ``self`` to the ambient crystal,
+        calculating `f_0` there and pulling the element back.
 
         EXAMPLES::
 
@@ -2322,17 +2430,23 @@ class KR_type_Cn(KirillovReshetikhinGenericCrystal):
 
         sage: K = crystals.KirillovReshetikhin(['C',3,1],3,1)
         sage: [[b,b.f(0)] for b in K]
-        [[[[1], [2], [3]], None], [[[1], [2], [-3]], None], [[[1], [3], [-3]], None],
-        [[[2], [3], [-3]], None], [[[1], [3], [-2]], None], [[[2], [3], [-2]], None],
-        [[[2], [3], [-1]], [[1], [2], [3]]], [[[1], [-3], [-2]], None], [[[2], [-3], [-2]], None],
-        [[[2], [-3], [-1]], [[1], [2], [-3]]], [[[3], [-3], [-2]], None], [[[3], [-3], [-1]],
-        [[1], [3], [-3]]], [[[3], [-2], [-1]], [[1], [3], [-2]]], [[[-3], [-2], [-1]], [[1], [-3], [-2]]]]
+        [[[[1], [2], [3]], None], [[[1], [2], [-3]], None],
+         [[[1], [3], [-3]], None], [[[2], [3], [-3]], None],
+         [[[1], [3], [-2]], None], [[[2], [3], [-2]], None],
+         [[[2], [3], [-1]], [[1], [2], [3]]], [[[1], [-3], [-2]], None],
+         [[[2], [-3], [-2]], None], [[[2], [-3], [-1]], [[1], [2], [-3]]],
+         [[[3], [-3], [-2]], None], [[[3], [-3], [-1]], [[1], [3], [-3]]],
+         [[[3], [-2], [-1]], [[1], [3], [-2]]],
+         [[[-3], [-2], [-1]], [[1], [-3], [-2]]]]
     """
 
     def classical_decomposition(self):
         r"""
-        Specifies the classical crystal underlying the Kirillov-Reshetikhin crystal `B^{n,s}`
-        of type `C_n^{(1)}`. It is given by `B^{n,s} \cong B(s \Lambda_n)`.
+        Specifies the classical crystal underlying the Kirillov-Reshetikhin
+        crystal `B^{n,s}` of type `C_n^{(1)}`.
+
+        The classical decomposition is given by
+        `B^{n,s} \cong B(s \Lambda_n)`.
 
         EXAMPLES::
 
@@ -2344,8 +2458,9 @@ class KR_type_Cn(KirillovReshetikhinGenericCrystal):
 
     def from_highest_weight_vector_to_pm_diagram(self, b):
         """
-        This gives the bijection between an element b in the classical decomposition
-        of the KR crystal that is `{2,3,..,n}`-highest weight and `\pm` diagrams.
+        This gives the bijection between an element ``b`` in the classical
+        decomposition of the KR crystal that is `{2,3,..,n}`-highest weight
+        and `\pm` diagrams.
 
         EXAMPLES::
 
@@ -2371,8 +2486,9 @@ class KR_type_Cn(KirillovReshetikhinGenericCrystal):
 
     def from_pm_diagram_to_highest_weight_vector(self, pm):
         """
-        This gives the bijection between a `\pm` diagram and an element b in the classical
-        decomposition of the KR crystal that is {2,3,..,n}-highest weight.
+        This gives the bijection between a `\pm` diagram and an element ``b``
+        in the classical decomposition of the KR crystal that is
+        `\{2,3,..,n\}`-highest weight.
 
         EXAMPLES::
 
@@ -2397,7 +2513,8 @@ class KR_type_Cn(KirillovReshetikhinGenericCrystal):
 
 class KR_type_CnElement(KirillovReshetikhinGenericCrystalElement):
     r"""
-    Class for the elements in the Kirillov-Reshetikhin crystals `B^{n,s}` of type `C_n^{(1)}`.
+    Class for the elements in the Kirillov-Reshetikhin crystals `B^{n,s}`
+    of type `C_n^{(1)}`.
 
     EXAMPLES::
 
@@ -2408,8 +2525,9 @@ class KR_type_CnElement(KirillovReshetikhinGenericCrystalElement):
 
     def e0(self):
         r"""
-        Gives `e_0` on self by going to the `\pm`-diagram corresponding to the `{2,...,n}`-highest weight
-        vector in the component of `self`, then applying [Definition 6.1, 4], and pulling back from
+        Return `e_0` on ``self`` by going to the `\pm`-diagram corresponding
+        to the `\{2,...,n\}`-highest weight vector in the component of
+        ``self``, then applying [Definition 6.1, 4], and pulling back from
         `\pm`-diagrams.
 
         EXAMPLES::
@@ -2439,13 +2557,14 @@ class KR_type_CnElement(KirillovReshetikhinGenericCrystalElement):
 
     def f0(self):
         r"""
-        Gives `e_0` on self by going to the `\pm`-diagram corresponding to the `{2,...,n}`-highest weight
-        vector in the component of `self`, then applying [Definition 6.1, 4], and pulling back from
+        Return `e_0` on ``self`` by going to the `\pm`-diagram corresponding
+        to the `\{2,...,n\}`-highest weight vector in the component of
+        ``self``, then applying [Definition 6.1, 4], and pulling back from
         `\pm`-diagrams.
 
         EXAMPLES::
 
-            sage: K=crystals.KirillovReshetikhin(['C',3,1],3,1)
+            sage: K = crystals.KirillovReshetikhin(['C',3,1],3,1)
             sage: b = K.module_generators[0]
             sage: b.f(0) # indirect doctest
         """
@@ -2534,7 +2653,8 @@ class KR_type_Dn_twisted(KirillovReshetikhinGenericCrystal):
             # Check to make sure it can be converted
             if elt.cartan_type() != self.cartan_type() \
               or elt.parent().r() != self._r or elt.parent().s() != self._s:
-                raise ValueError("the Kirillov-Reshetikhin tableau must have the same Cartan type and shape")
+                raise ValueError("the Kirillov-Reshetikhin tableau must have"
+                                 " the same Cartan type and shape")
 
             to_hw = elt.to_classical_highest_weight()
             wt = to_hw[0].classical_weight()
@@ -2547,8 +2667,11 @@ class KR_type_Dn_twisted(KirillovReshetikhinGenericCrystal):
 
     def classical_decomposition(self):
         r"""
-        Specifies the classical crystal underlying the Kirillov-Reshetikhin crystal `B^{n,s}`
-        of type `D_{n+1}^{(2)}`. It is given by `B^{n,s} \cong B(s \Lambda_n)`.
+        Return the classical crystal underlying the Kirillov-Reshetikhin
+        crystal `B^{n,s}` of type `D_{n+1}^{(2)}`.
+
+        The classical decomposition is given by
+        `B^{n,s} \cong B(s \Lambda_n)`.
 
         EXAMPLES::
 
@@ -2561,15 +2684,16 @@ class KR_type_Dn_twisted(KirillovReshetikhinGenericCrystal):
         """
         s = self.s()
         if is_even(s):
-            s = s//2
+            s = s // 2
         else:
-            s = s/2
+            s = s / 2
         return CrystalOfTableaux(self.cartan_type().classical(), shape = [s]*self.r() )
 
     def from_highest_weight_vector_to_pm_diagram(self, b):
-        """
-        This gives the bijection between an element b in the classical decomposition
-        of the KR crystal that is `{2,3,..,n}`-highest weight and `\pm` diagrams.
+        r"""
+        This gives the bijection between an element ``b`` in the
+        classical decomposition of the KR crystal that is
+        `\{2,3,\ldots,n\}`-highest weight and `\pm` diagrams.
 
         EXAMPLES::
 
@@ -2583,13 +2707,15 @@ class KR_type_Dn_twisted(KirillovReshetikhinGenericCrystal):
             sage: T = K.classical_decomposition()
             sage: hw = [ b for b in T if all(b.epsilon(i)==0 for i in [2,3]) ]
             sage: [K.from_highest_weight_vector_to_pm_diagram(b) for b in hw]
-            [[[0, 0], [0, 0], [2, 0], [0]], [[0, 0], [0, 0], [0, 0], [2]], [[0, 0], [2, 0], [0, 0], [0]],
-            [[0, 0], [0, 0], [0, 2], [0]]]
+            [[[0, 0], [0, 0], [2, 0], [0]], [[0, 0], [0, 0], [0, 0], [2]],
+             [[0, 0], [2, 0], [0, 0], [0]], [[0, 0], [0, 0], [0, 2], [0]]]
 
-        Note that, since the classical decomposition of this crystal is of type `B_n`, there can
-        be (at most one) entry `0` in the `{2,3,...,n}`-highest weight elements at height `n`.
-        In the following implementation this is realized as an empty column of height `n` since
-        this uniquely specifies the existence of the `0`:
+        Note that, since the classical decomposition of this crystal is of
+        type `B_n`, there can be (at most one) entry `0` in the
+        `\{2,3,\ldots,n\}`-highest weight elements at height `n`.
+        In the following implementation this is realized as an empty
+        column of height `n` since this uniquely specifies the existence
+        of the `0`.
 
         EXAMPLES::
 
@@ -2616,7 +2742,7 @@ class KR_type_Dn_twisted(KirillovReshetikhinGenericCrystal):
             True
 
         """
-        n = self.cartan_type().rank()-1
+        n = self.cartan_type().rank() - 1
         s = self.s()
         if is_odd(s):
             t = b[0]
@@ -2624,8 +2750,8 @@ class KR_type_Dn_twisted(KirillovReshetikhinGenericCrystal):
         else:
             t = b.parent()(rows=[])
         inner = [Integer(2*b.weight()[i]+2*t.weight()[i]) for i in range(1,n+1)]
-        inter1 = Partition([len([i for i in r if i>0]) for r in b.to_tableau()])
-        inter = Partition([len([i for i in r if i>=0]) for r in b.to_tableau()])
+        inter1 = Partition([len([i for i in r if i > 0]) for r in b.to_tableau()])
+        inter = Partition([len([i for i in r if i >= 0]) for r in b.to_tableau()])
         if inter != inter1:
             inner[n-1] += 2
         inner = Partition(inner)
@@ -2645,9 +2771,10 @@ class KR_type_Dn_twisted(KirillovReshetikhinGenericCrystal):
         return PMDiagram([n, s, outer, inter, inner], from_shapes=True)
 
     def from_pm_diagram_to_highest_weight_vector(self, pm):
-        """
-        This gives the bijection between a `\pm` diagram and an element b in the classical
-        decomposition of the KR crystal that is {2,3,..,n}-highest weight.
+        r"""
+        This gives the bijection between a `\pm` diagram and an element
+        ``b`` in the classical decomposition of the KR crystal that is
+        `\{2,3,\ldots,n\}`-highest weight.
 
         EXAMPLES::
 
@@ -2674,7 +2801,8 @@ class KR_type_Dn_twisted(KirillovReshetikhinGenericCrystal):
 
 class KR_type_Dn_twistedElement(KirillovReshetikhinGenericCrystalElement):
     r"""
-    Class for the elements in the Kirillov-Reshetikhin crystals `B^{n,s}` of type `D_{n+1}^{(2)}`.
+    Class for the elements in the Kirillov-Reshetikhin crystals `B^{n,s}`
+    of type `D_{n+1}^{(2)}`.
 
     EXAMPLES::
 
@@ -2685,8 +2813,9 @@ class KR_type_Dn_twistedElement(KirillovReshetikhinGenericCrystalElement):
 
     def e0(self):
         r"""
-        Gives `e_0` on self by going to the `\pm`-diagram corresponding to the `{2,...,n}`-highest weight
-        vector in the component of `self`, then applying [Definition 6.2, 4], and pulling back from
+        Return `e_0` on ``self`` by going to the `\pm`-diagram corresponding
+        to the `\{2,\ldots,n\}`-highest weight vector in the component of
+        ``self``, then applying [Definition 6.2, 4], and pulling back from
         `\pm`-diagrams.
 
         EXAMPLES::
@@ -2720,13 +2849,14 @@ class KR_type_Dn_twistedElement(KirillovReshetikhinGenericCrystalElement):
 
     def f0(self):
         r"""
-        Gives `e_0` on self by going to the `\pm`-diagram corresponding to the `{2,...,n}`-highest weight
-        vector in the component of `self`, then applying [Definition 6.2, 4], and pulling back from
+        Return `e_0` on ``self`` by going to the `\pm`-diagram corresponding
+        to the `\{2,\ldots,n\}`-highest weight vector in the component of
+        ``self``, then applying [Definition 6.2, 4], and pulling back from
         `\pm`-diagrams.
 
         EXAMPLES::
 
-            sage: K=crystals.KirillovReshetikhin(['D',4,2],3,2)
+            sage: K = crystals.KirillovReshetikhin(['D',4,2],3,2)
             sage: b = K.module_generators[0]
             sage: b.f(0) # indirect doctest
         """
@@ -2736,7 +2866,7 @@ class KR_type_Dn_twistedElement(KirillovReshetikhinGenericCrystalElement):
         pm = self.parent().from_highest_weight_vector_to_pm_diagram(b)
         [l1,l2] = pm.pm_diagram[n-1]
         l3 = pm.pm_diagram[n-2][0]
-        if l1+l2+l3==s and l2==0:
+        if l1+l2+l3 == s and l2 == 0:
             return None
         if l1+l2+l3<s:
             pm.pm_diagram[n-1][0] = l1+2
@@ -2778,7 +2908,7 @@ class KR_type_Dn_twistedElement(KirillovReshetikhinGenericCrystalElement):
             sage: all(eps0_defn(x) == x.epsilon0() for x in K)
             True
         """
-        n = self.parent().cartan_type().rank()-1
+        n = self.parent().cartan_type().rank() - 1
         [b,l] = self.lift().to_highest_weight(index_set=list(range(2, n + 1)))
         pm = self.parent().from_highest_weight_vector_to_pm_diagram(b)
         l1 = pm.pm_diagram[n-1][0]
@@ -2791,7 +2921,7 @@ class KR_type_Dn_twistedElement(KirillovReshetikhinGenericCrystalElement):
 
         EXAMPLES::
 
-            sage: K=crystals.KirillovReshetikhin(['D',4,2],3,1)
+            sage: K = crystals.KirillovReshetikhin(['D',4,2],3,1)
             sage: b = K.module_generators[0]
             sage: b.phi(0) # indirect doctest
             0
@@ -2829,26 +2959,38 @@ class KR_type_spin(KirillovReshetikhinCrystalFromPromotion):
         sage: K = crystals.KirillovReshetikhin(['D',4,1],4,1); K
         Kirillov-Reshetikhin crystal of type ['D', 4, 1] with (r,s)=(4,1)
         sage: [[b,b.f(0)] for b in K]
-        [[[++++, []], None], [[++--, []], None], [[+-+-, []], None], [[-++-, []], None],
-        [[+--+, []], None], [[-+-+, []], None], [[--++, []], [++++, []]], [[----, []], [++--, []]]]
+        [[[++++, []], None], [[++--, []], None], [[+-+-, []], None],
+         [[-++-, []], None], [[+--+, []], None], [[-+-+, []], None],
+         [[--++, []], [++++, []]], [[----, []], [++--, []]]]
 
         sage: K = crystals.KirillovReshetikhin(['D',4,1],4,2); K
         Kirillov-Reshetikhin crystal of type ['D', 4, 1] with (r,s)=(4,2)
         sage: [[b,b.f(0)] for b in K]
-        [[[[1], [2], [3], [4]], None], [[[1], [2], [-4], [4]], None], [[[1], [3], [-4], [4]], None],
-        [[[2], [3], [-4], [4]], None], [[[1], [4], [-4], [4]], None], [[[2], [4], [-4], [4]], None],
-        [[[3], [4], [-4], [4]], [[1], [2], [3], [4]]], [[[-4], [4], [-4], [4]], [[1], [2], [-4], [4]]],
-        [[[-4], [4], [-4], [-3]], [[1], [2], [-4], [-3]]], [[[-4], [4], [-4], [-2]], [[1], [3], [-4], [-3]]],
-        [[[-4], [4], [-4], [-1]], [[2], [3], [-4], [-3]]], [[[-4], [4], [-3], [-2]], [[1], [4], [-4], [-3]]],
-        [[[-4], [4], [-3], [-1]], [[2], [4], [-4], [-3]]], [[[-4], [4], [-2], [-1]], [[-4], [4], [-4], [4]]],
-        [[[-4], [-3], [-2], [-1]], [[-4], [4], [-4], [-3]]], [[[1], [2], [-4], [-3]], None], [[[1], [3], [-4], [-3]], None],
-        [[[2], [3], [-4], [-3]], None], [[[1], [3], [-4], [-2]], None], [[[2], [3], [-4], [-2]], None],
-        [[[2], [3], [-4], [-1]], None], [[[1], [4], [-4], [-3]], None], [[[2], [4], [-4], [-3]], None],
-        [[[3], [4], [-4], [-3]], None], [[[3], [4], [-4], [-2]], [[1], [3], [-4], [4]]],
-        [[[3], [4], [-4], [-1]], [[2], [3], [-4], [4]]], [[[1], [4], [-4], [-2]], None], [[[2], [4], [-4], [-2]], None],
-        [[[2], [4], [-4], [-1]], None], [[[1], [4], [-3], [-2]], None], [[[2], [4], [-3], [-2]], None],
-        [[[2], [4], [-3], [-1]], None], [[[3], [4], [-3], [-2]], [[1], [4], [-4], [4]]],
-        [[[3], [4], [-3], [-1]], [[2], [4], [-4], [4]]], [[[3], [4], [-2], [-1]], [[3], [4], [-4], [4]]]]
+        [[[[1], [2], [3], [4]], None], [[[1], [2], [-4], [4]], None],
+         [[[1], [3], [-4], [4]], None], [[[2], [3], [-4], [4]], None],
+         [[[1], [4], [-4], [4]], None], [[[2], [4], [-4], [4]], None],
+         [[[3], [4], [-4], [4]], [[1], [2], [3], [4]]],
+         [[[-4], [4], [-4], [4]], [[1], [2], [-4], [4]]],
+         [[[-4], [4], [-4], [-3]], [[1], [2], [-4], [-3]]],
+         [[[-4], [4], [-4], [-2]], [[1], [3], [-4], [-3]]],
+         [[[-4], [4], [-4], [-1]], [[2], [3], [-4], [-3]]],
+         [[[-4], [4], [-3], [-2]], [[1], [4], [-4], [-3]]],
+         [[[-4], [4], [-3], [-1]], [[2], [4], [-4], [-3]]],
+         [[[-4], [4], [-2], [-1]], [[-4], [4], [-4], [4]]],
+         [[[-4], [-3], [-2], [-1]], [[-4], [4], [-4], [-3]]],
+         [[[1], [2], [-4], [-3]], None], [[[1], [3], [-4], [-3]], None],
+         [[[2], [3], [-4], [-3]], None], [[[1], [3], [-4], [-2]], None],
+         [[[2], [3], [-4], [-2]], None], [[[2], [3], [-4], [-1]], None],
+         [[[1], [4], [-4], [-3]], None], [[[2], [4], [-4], [-3]], None],
+         [[[3], [4], [-4], [-3]], None],
+         [[[3], [4], [-4], [-2]], [[1], [3], [-4], [4]]],
+         [[[3], [4], [-4], [-1]], [[2], [3], [-4], [4]]],
+         [[[1], [4], [-4], [-2]], None], [[[2], [4], [-4], [-2]], None],
+         [[[2], [4], [-4], [-1]], None], [[[1], [4], [-3], [-2]], None],
+         [[[2], [4], [-3], [-2]], None], [[[2], [4], [-3], [-1]], None],
+         [[[3], [4], [-3], [-2]], [[1], [4], [-4], [4]]],
+         [[[3], [4], [-3], [-1]], [[2], [4], [-4], [4]]],
+         [[[3], [4], [-2], [-1]], [[3], [4], [-4], [4]]]]
 
     TESTS::
 
@@ -2903,8 +3045,11 @@ class KR_type_spin(KirillovReshetikhinCrystalFromPromotion):
 
     def classical_decomposition(self):
         r"""
-        Returns the classical crystal underlying the Kirillov-Reshetikhin crystal `B^{r,s}`
-        of type `D_n^{(1)}` for `r=n-1,n`. It is given by `B^{n,s} \cong B(s \Lambda_r)`.
+        Return the classical crystal underlying the Kirillov-Reshetikhin
+        crystal `B^{r,s}` of type `D_n^{(1)}` for `r=n-1,n`.
+
+        The classical decomposition is given by
+        `B^{n,s} \cong B(s \Lambda_r)`.
 
         EXAMPLES::
 
@@ -2932,15 +3077,15 @@ class KR_type_spin(KirillovReshetikhinCrystalFromPromotion):
             c = [s/QQ(2)]*C.n
         else:
             c = [s/QQ(2)]*(C.n-1)+[-s/QQ(2)]
-        return CrystalOfTableaux(C, shape = c)
+        return CrystalOfTableaux(C, shape=c)
 
     def dynkin_diagram_automorphism(self, i):
         """
-        Specifies the Dynkin diagram automorphism underlying the promotion action on the crystal
-        elements. The automorphism needs to map node 0 to some other Dynkin node.
+        Specifies the Dynkin diagram automorphism underlying the promotion
+        action on the crystal elements.
 
-        Here we use the Dynkin diagram automorphism which interchanges nodes 0 and 1 and leaves
-        all other nodes unchanged.
+        Here we use the Dynkin diagram automorphism which interchanges
+        nodes 0 and 1 and leaves all other nodes unchanged.
 
         EXAMPLES::
 
@@ -2958,13 +3103,18 @@ class KR_type_spin(KirillovReshetikhinCrystalFromPromotion):
     @cached_method
     def promotion_on_highest_weight_vectors(self):
         r"""
-        Returns the promotion operator on `\{2,3,\ldots,n\}`-highest weight vectors.
+        Return the promotion operator on `\{2,3,\ldots,n\}`-highest
+        weight vectors.
 
-        A `\{2,3,\ldots,n\}`-highest weight vector in `B(s\Lambda_n)` of weight
-        `w=(w_1,\ldots,w_n)` is mapped to a `\{2,3,\ldots,n\}`-highest weight vector in `B(s\Lambda_{n-1})`
+        A `\{2,3,\ldots,n\}`-highest weight vector in `B(s\Lambda_n)` of
+        weight `w = (w_1,\ldots,w_n)` is mapped to a
+        `\{2,3,\ldots,n\}`-highest weight vector in `B(s\Lambda_{n-1})`
         of weight `(-w_1,w_2,\ldots,w_n)` and vice versa.
 
-        See also :meth:`promotion_on_highest_weight_vectors_inverse` and :meth:`promotion`.
+        .. SEEALSO::
+
+            - :meth:`promotion_on_highest_weight_vectors_inverse`
+            - :meth:`promotion`
 
         EXAMPLES::
 
@@ -2992,25 +3142,29 @@ class KR_type_spin(KirillovReshetikhinCrystalFromPromotion):
         ind.remove(1)
         C = T.cartan_type()
         n = C.n
-        sh = [ i for i in T.shapes[0] ]
+        sh = [i for i in T.shapes[0]]
         sh[n-1] = -sh[n-1]
-        T_dual = CrystalOfTableaux(C, shape = sh)
-        hw = [ t for t in T if t.is_highest_weight(index_set = ind) ]
-        hw_dual = [ t for t in T_dual if t.is_highest_weight(index_set = ind) ]
-        dic_weight = {tuple(t.weight().to_vector()) : t for t in hw}
-        dic_weight_dual = {tuple(t.weight().to_vector()) : t for t in hw_dual}
+        T_dual = CrystalOfTableaux(C, shape=sh)
+        hw = [t for t in T if t.is_highest_weight(index_set=ind)]
+        hw_dual = [t for t in T_dual if t.is_highest_weight(index_set=ind)]
+        dic_weight = {tuple(t.weight().to_vector()): t for t in hw}
+        dic_weight_dual = {tuple(t.weight().to_vector()): t for t in hw_dual}
         def neg(x):
-            y = [i for i in x]
+            y = list(x) # map a (shallow) copy
             y[0] = -y[0]
             return tuple(y)
-        return dict( (dic_weight[w], dic_weight_dual[neg(w)]) for w in dic_weight)
+        return {dic_weight[w]: dic_weight_dual[neg(w)] for w in dic_weight}
 
     @cached_method
     def promotion_on_highest_weight_vectors_inverse(self):
         r"""
-        Returns the inverse promotion operator on `\{2,3,\ldots,n\}`-highest weight vectors.
+        Return the inverse promotion operator on
+        `\{2,3,\ldots,n\}`-highest weight vectors.
 
-        See also :meth:`promotion_on_highest_weight_vectors` and :meth:`promotion_inverse`.
+        .. SEEALSO::
+
+            - :meth:`promotion_on_highest_weight_vectors`
+            - :meth:`promotion_inverse`
 
         EXAMPLES::
 
@@ -3029,7 +3183,7 @@ class KR_type_spin(KirillovReshetikhinCrystalFromPromotion):
     def promotion(self):
         r"""
         Return the promotion operator on `B^{r,s}` of type
-        `D_n^{(1)}` for `r=n-1,n`.
+        `D_n^{(1)}` for `r = n-1,n`.
 
         EXAMPLES::
 
@@ -3050,20 +3204,13 @@ class KR_type_spin(KirillovReshetikhinCrystalFromPromotion):
         T = self.classical_decomposition()
         ind = list(T.index_set())
         ind.remove(1)
-        C = T.cartan_type()
-        n = C.n
-        def aut(i):
-            if i==n:
-                return n-1
-            elif i==n-1:
-                return n
-            return i
         return CrystalDiagramAutomorphism(T, self.promotion_on_highest_weight_vectors(), ind)
 
     @cached_method
     def promotion_inverse(self):
         r"""
-        Returns the inverse promotion operator on `B^{r,s}` of type `D_n^{(1)}` for `r=n-1,n`.
+        Return the inverse promotion operator on `B^{r,s}` of type
+        `D_n^{(1)}` for `r=n-1,n`.
 
         EXAMPLES::
 
@@ -3078,14 +3225,6 @@ class KR_type_spin(KirillovReshetikhinCrystalFromPromotion):
         T = list(D)[0].parent()
         ind = list(T.index_set())
         ind.remove(1)
-        C = T.cartan_type()
-        n = C.n
-        def aut(i):
-            if i==n:
-                return n-1
-            elif i==n-1:
-                return n
-            return i
         return CrystalDiagramAutomorphism(T, self.promotion_on_highest_weight_vectors_inverse(), ind)
 
 class KR_type_D_tri1(KirillovReshetikhinGenericCrystal):
@@ -3397,9 +3536,9 @@ class PMDiagram(CombinatorialObject):
         if from_shapes:
             n = pm_diagram[0]
             s = pm_diagram[1]
-            outer = [s]+list(pm_diagram[2])+[0 for i in range(n)]
-            intermediate = [s]+list(pm_diagram[3])+[0 for i in range(n)]
-            inner = [s]+list(pm_diagram[4])+[0 for i in range(n)]
+            outer = [s] + list(pm_diagram[2]) + [0]*n
+            intermediate = [s] + list(pm_diagram[3]) + [0]*n
+            inner = [s] + list(pm_diagram[4]) + [0]*n
             pm = [[inner[n]]]
             for i in range((n+1)//2):
                 pm.append([intermediate[n-2*i]-inner[n-2*i], inner[n-2*i-1]-intermediate[n-2*i]])
@@ -3410,7 +3549,7 @@ class PMDiagram(CombinatorialObject):
         self.pm_diagram = pm_diagram
         self.n = len(pm_diagram)-1
         self._list = [i for a in reversed(pm_diagram) for i in a]
-        self.width = sum(i for i in self._list)
+        self.width = sum(self._list)
 
     def _repr_(self):
         """
@@ -3423,31 +3562,6 @@ class PMDiagram(CombinatorialObject):
             [[1, 0], [0, 1], [2, 0], [0, 0], [0]]
         """
         return repr(self.pm_diagram)
-
-    def __repr__(self, pretty_printing=None):
-        """
-        Return a string representation of ``self``.
-
-        This is implemented only for the deprecation warning of the
-        ``pretty_printing`` optional argument.
-
-        TESTS::
-
-            sage: pm = sage.combinat.crystals.kirillov_reshetikhin.PMDiagram([[1,0],[0,1],[2,0],[0,0],[0]])
-            sage: pm.__repr__(pretty_printing=True)
-            doctest:...: DeprecationWarning: pretty_printing is deprecated. Use instead pp()
-            See http://trac.sagemath.org/15913 for details.
-            .  .  .  +
-            .  .  -  -
-            +  +
-            -  -
-        """
-        if pretty_printing is not None:
-            from sage.misc.superseded import deprecation
-            deprecation(15913, 'pretty_printing is deprecated. Use instead pp()')
-            if pretty_printing is True:
-                return self.pp()
-        return super(PMDiagram, self).__repr__()
 
     def _repr_diagram(self):
         """
@@ -3669,7 +3783,7 @@ def horizontal_dominoes_removed(r, s):
         sage: sage.combinat.crystals.kirillov_reshetikhin.horizontal_dominoes_removed(3,2)
         [[], [2], [2, 2], [2, 2, 2]]
     """
-    ulist = [ [y for y in x] + [0 for i in range(r-x.length())] for x in partitions_in_box(r, s//2) ]
+    ulist = [ [y for y in x] + [0]*(r-x.length()) for x in partitions_in_box(r, s//2) ]
     two = lambda x : 2 * (x - s // 2) + s
     return [Partition([two(y) for y in x]) for x in ulist]
 
@@ -3700,7 +3814,7 @@ class AmbientRetractMap(Map):
         Map.__init__(self, Hom(ambient, base, SetsWithPartialMaps()))
 
         if similarity_factor_domain is None:
-            similarity_factor_domain = dict( (i,1) for i in index_set )
+            similarity_factor_domain = {i:1 for i in index_set}
         if automorphism is None:
             automorphism = lambda i: i
 

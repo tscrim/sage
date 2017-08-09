@@ -21,7 +21,7 @@ from sage.structure.element import parent
 from sage.structure.parent import Parent
 from sage.structure.unique_representation import UniqueRepresentation
 from sage.structure.element import Element
-from sage.structure.sage_object import richcmp
+from sage.structure.richcmp import richcmp
 from sage.categories.regular_crystals import RegularCrystals
 from sage.categories.infinite_enumerated_sets import InfiniteEnumeratedSets
 from sage.rings.infinity import Infinity
@@ -105,25 +105,6 @@ class AffinizationOfCrystal(UniqueRepresentation, Parent):
             Affinization of Kirillov-Reshetikhin crystal of type ['A', 2, 1] with (r,s)=(1,1)
         """
         return "Affinization of {}".format(self._B)
-
-    # TODO: This should become unnecessary once we have a proper category for KR crystals
-    def digraph(self, subset=None, index_set=None):
-        """
-        Return the DiGraph associated with ``self``. See
-        :meth:`~sage.categories.crystals.ParentMethods.digraph()` for more
-        information.
-
-        EXAMPLES::
-
-            sage: A = crystals.KirillovReshetikhin(['A',2,1], 2, 2).affinization()
-            sage: S = A.subcrystal(max_depth=3)
-            sage: G = A.digraph(subset=S)
-        """
-        G = super(AffinizationOfCrystal, self).digraph(subset, index_set)
-        from sage.graphs.dot2tex_utils import have_dot2tex
-        if have_dot2tex():
-            G.set_latex_options(edge_options=lambda u_v_label: ({}))
-        return G
 
     class Element(Element):
         """

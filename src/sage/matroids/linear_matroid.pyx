@@ -111,6 +111,7 @@ Methods
 from __future__ import print_function, absolute_import
 
 include 'sage/data_structures/bitset.pxi'
+from cpython.object cimport Py_EQ, Py_NE
 
 from sage.matroids.matroid cimport Matroid
 from sage.matroids.basis_exchange_matroid cimport BasisExchangeMatroid
@@ -271,8 +272,9 @@ cdef class LinearMatroid(BasisExchangeMatroid):
         """
         basis = self._setup_internal_representation(matrix, reduced_matrix, ring, keep_initial_representation)
         if groundset is None:
-            groundset = range(self._A.nrows() + self._A.ncols())
+            groundset = list(xrange(self._A.nrows() + self._A.ncols()))
         else:
+            groundset = list(groundset)
             if len(groundset) != self._A.nrows() + self._A.ncols():
                 raise ValueError("size of groundset does not match size of matrix")
         BasisExchangeMatroid.__init__(self, groundset, [groundset[i] for i in basis])
@@ -319,7 +321,7 @@ cdef class LinearMatroid(BasisExchangeMatroid):
                 self._A = GenericMatrix(reduced_matrix.nrows(), reduced_matrix.ncols(), M=reduced_matrix, ring=ring)
             else:
                 self._A = (<LeanMatrix>reduced_matrix).copy()   # Deprecated Sage matrix operation
-            P = range(self._A.nrows())
+            P = list(xrange(self._A.nrows()))
         self._prow = <long* > sig_malloc((self._A.nrows() + self._A.ncols()) * sizeof(long))
         if matrix is not None:
             for r in xrange(len(P)):
@@ -587,9 +589,7 @@ cdef class LinearMatroid(BasisExchangeMatroid):
                     self._representation = self._basic_representation(B)
                 A = self._representation
             else:
-                if not self.groundset().issuperset(B):
-                    raise ValueError("input is not a subset of the groundset.")
-                B = set(B)
+                B = self.__subset(B)
                 A = self._basic_representation(B)
             A = A.matrix_from_rows_and_columns(range(A.nrows()), order_idx)
             if lift_map is None:
@@ -604,11 +604,9 @@ cdef class LinearMatroid(BasisExchangeMatroid):
                     return lift_cross_ratios(A._matrix_(), lift_map)
         else:
             if B is None:
-                B = self.basis()
+                B = frozenset(self.basis())
             else:
-                if not self.groundset().issuperset(B):
-                    raise ValueError("input is not a subset of the groundset.")
-            B = set(B)
+                B = self.__subset(B)
             A = self._reduced_representation(B)
             R, C = self._current_rows_cols()
             Ri = []
@@ -1221,15 +1219,15 @@ cdef class LinearMatroid(BasisExchangeMatroid):
             sage: M1 == M3  # indirect doctest
             True
         """
-        if op in [0, 1, 4, 5]:  # <, <=, >, >=
+        if op not in [Py_EQ, Py_NE]:
             return NotImplemented
         if not isinstance(left, LinearMatroid) or not isinstance(right, LinearMatroid):
             return NotImplemented
         if left.__class__ != right.__class__:   # since we have some subclasses, an extra test
             return NotImplemented
-        if op == 2:  # ==
+        if op == Py_EQ:
             res = True
-        if op == 3:  # !=
+        if op == Py_NE:
             res = False
         # res gets inverted if matroids are deemed different.
         if left.is_field_equivalent(right):
@@ -1343,7 +1341,7 @@ cdef class LinearMatroid(BasisExchangeMatroid):
         rows, cols = self._current_rows_cols()
         return type(self)(reduced_matrix=R, groundset=cols + rows)
 
-    cpdef has_line_minor(self, k, hyperlines=None):
+    cpdef has_line_minor(self, k, hyperlines=None, certificate=False):
         """
         Test if the matroid has a `U_{2, k}`-minor.
 
@@ -1352,18 +1350,21 @@ cdef class LinearMatroid(BasisExchangeMatroid):
         than two elements is dependent.
 
         The optional argument ``hyperlines`` restricts the search space: this
-        method returns ``False`` if `si(M/F)` is isomorphic to `U_{2, l}` with
-        `l \geq k` for some `F` in ``hyperlines``, and ``True`` otherwise.
+        method returns ``True`` if `si(M/F)` is isomorphic to `U_{2, l}` with
+        `l \geq k` for some `F` in ``hyperlines``, and ``False`` otherwise.
 
         INPUT:
 
         - ``k`` -- the length of the line minor
         - ``hyperlines`` -- (default: ``None``) a set of flats of codimension
           2. Defaults to the set of all flats of codimension 2.
+        - ``certificate`` (default: ``False``); If ``True`` returns ``True, F``,
+          where ``F`` is a flat and ``self.minor(contractions=F)`` has a
+          `U_{2,k}` restriction or ``False, None``.
 
         OUTPUT:
 
-        Boolean.
+        Boolean or tuple.
 
         EXAMPLES::
 
@@ -1377,14 +1378,23 @@ cdef class LinearMatroid(BasisExchangeMatroid):
             sage: M.has_line_minor(k=4, hyperlines=[['a', 'b', 'c'],
             ....:                                   ['a', 'b', 'd' ]])
             True
+            sage: M.has_line_minor(4, certificate=True)
+            (True, frozenset({'a', 'b', 'd'}))
+            sage: M.has_line_minor(5, certificate=True)
+            (False, None)
+            sage: M.has_line_minor(k=4, hyperlines=[['a', 'b', 'c'],
+            ....:                                   ['a', 'b', 'd' ]], certificate=True)
+            (True, frozenset({'a', 'b', 'd'}))
 
         """
         try:
             if k > len(self.base_ring()) + 1:
+                if certificate:
+                    return False, None
                 return False
         except TypeError:
             pass
-        return Matroid.has_line_minor(self, k, hyperlines)
+        return Matroid.has_line_minor(self, k, hyperlines, certificate)
 
     cpdef has_field_minor(self, N):
         """
@@ -2761,9 +2771,9 @@ cdef class LinearMatroid(BasisExchangeMatroid):
                         B[x,y]=0
             
             # remove row x1 and y1
-            Xp = range(n)
+            Xp = list(xrange(n))
             Xp.remove(x1)
-            Yp = range(m)
+            Yp = list(xrange(m))
             Yp.remove(y1)
 
             B = B.matrix_from_rows_and_columns(Xp,Yp)
@@ -3010,12 +3020,12 @@ cdef class BinaryMatroid(LinearMatroid):
             self._A = A
         else:
             A = BinaryMatrix(reduced_matrix.nrows(), reduced_matrix.ncols(), M=reduced_matrix)
-            P = range(A.nrows())
+            P = list(xrange(A.nrows()))
             self._A = A.prepend_identity()   # Not a Sage matrix operation
 
         # Setup groundset, BasisExchangeMatroid data
         if groundset is None:
-            groundset = range(self._A.ncols())
+            groundset = list(xrange(self._A.ncols()))
         else:
             if len(groundset) != self._A.ncols():
                 raise ValueError("size of groundset does not match size of matrix")
@@ -3738,7 +3748,7 @@ cdef class BinaryMatroid(LinearMatroid):
             sage: M.dual().is_graphic()
             False
 
-        .. ALGORITHM:
+        ALGORITHM:
 
         In a recent paper, Geelen and Gerards [GG2012]_ reduced the problem to
         testing if a system of linear equations has a solution. While not the
@@ -4067,12 +4077,12 @@ cdef class TernaryMatroid(LinearMatroid):
             self._A = A
         else:
             A = TernaryMatrix(reduced_matrix.nrows(), reduced_matrix.ncols(), M=reduced_matrix)
-            P = range(A.nrows())
+            P = list(xrange(A.nrows()))
             self._A = A.prepend_identity()   # Not a Sage matrix operation
 
         # Setup groundset, BasisExchangeMatroid data
         if groundset is None:
-            groundset = range(self._A.ncols())
+            groundset = list(xrange(self._A.ncols()))
         else:
             if len(groundset) != self._A.ncols():
                 raise ValueError("size of groundset does not match size of matrix")
@@ -4952,12 +4962,12 @@ cdef class QuaternaryMatroid(LinearMatroid):
             self._A = A
         else:
             A = QuaternaryMatrix(reduced_matrix.nrows(), reduced_matrix.ncols(), M=reduced_matrix, ring=ring)
-            P = range(A.nrows())
+            P = list(xrange(A.nrows()))
             self._A = A.prepend_identity()   # Not a Sage matrix operation
 
         # Setup groundset, BasisExchangeMatroid data
         if groundset is None:
-            groundset = range(self._A.ncols())
+            groundset = list(xrange(self._A.ncols()))
         else:
             if len(groundset) != self._A.ncols():
                 raise ValueError("size of groundset does not match size of matrix")
@@ -5671,7 +5681,7 @@ cdef class RegularMatroid(LinearMatroid):
                 self._A = IntegerMatrix(reduced_matrix.nrows(), reduced_matrix.ncols(), M=reduced_matrix)
             else:
                 self._A = (<IntegerMatrix>reduced_matrix).copy()   # Deprecated Sage matrix operation
-            P = range(self._A.nrows())
+            P = list(xrange(self._A.nrows()))
         self._prow = <long* > sig_malloc((self._A.nrows() + self._A.ncols()) * sizeof(long))
         if matrix is not None:
             for r in xrange(len(P)):
@@ -6105,7 +6115,7 @@ cdef class RegularMatroid(LinearMatroid):
             idx={str(f):f for f in other.groundset()}
             return {e:idx[m[str(e)]] for e in self.groundset() if str(e) in m}
     
-    cpdef has_line_minor(self, k, hyperlines=None):
+    cpdef has_line_minor(self, k, hyperlines=None, certificate=False):
         """
         Test if the matroid has a `U_{2, k}`-minor.
 
@@ -6114,18 +6124,21 @@ cdef class RegularMatroid(LinearMatroid):
         than two elements is dependent.
 
         The optional argument ``hyperlines`` restricts the search space: this
-        method returns ``False`` if `si(M/F)` is isomorphic to `U_{2, l}` with
-        `l \geq k` for some `F` in ``hyperlines``, and ``True`` otherwise.
+        method returns ``True`` if `si(M/F)` is isomorphic to `U_{2, l}` with
+        `l \geq k` for some `F` in ``hyperlines``, and ``False`` otherwise.
 
         INPUT:
 
         - ``k`` -- the length of the line minor
         - ``hyperlines`` -- (default: ``None``) a set of flats of codimension
           2. Defaults to the set of all flats of codimension 2.
+        - ``certificate`` (default: ``False``); If ``True`` returns ``True, F``,
+          where ``F`` is a flat and ``self.minor(contractions=F)`` has a
+          `U_{2,k}` restriction or ``False, None``.
 
         OUTPUT:
 
-        Boolean.
+        Boolean or tuple.
 
         .. SEEALSO::
 
@@ -6136,16 +6149,24 @@ cdef class RegularMatroid(LinearMatroid):
             sage: M = matroids.named_matroids.R10()
             sage: M.has_line_minor(4)
             False
+            sage: M.has_line_minor(4, certificate=True)
+            (False, None)
             sage: M.has_line_minor(3)
             True
+            sage: M.has_line_minor(3, certificate=True)
+            (True, frozenset({'a', 'b', 'c', 'g'}))
             sage: M.has_line_minor(k=3, hyperlines=[['a', 'b', 'c'],
             ....:                                   ['a', 'b', 'd' ]])
             True
-
+            sage: M.has_line_minor(k=3, hyperlines=[['a', 'b', 'c'],
+            ....:                                   ['a', 'b', 'd' ]], certificate=True)
+            (True, frozenset({'a', 'b', 'c'}))
         """
         if k > 3:
+            if certificate:
+                return False, None
             return False
-        return Matroid.has_line_minor(self, k, hyperlines)
+        return Matroid.has_line_minor(self, k, hyperlines, certificate)
 
     cpdef _linear_extension_chains(self, F, fundamentals=None):
         r"""

@@ -33,7 +33,7 @@ from sage.categories.finite_crystals import FiniteCrystals
 from sage.combinat.root_system.cartan_type import CartanType
 from sage.rings.integer import Integer
 from sage.rings.infinity import infinity
-from sage.structure.sage_object import richcmp
+from sage.structure.richcmp import richcmp
 
 
 class Subcrystal(UniqueRepresentation, Parent):
@@ -84,8 +84,8 @@ class Subcrystal(UniqueRepresentation, Parent):
         [[[1, 1], [3]],
          [[1, 1], [2]],
          [[1, 2], [3]],
-         [[1, 2], [2]],
          [[2, 2], [3]],
+         [[1, 2], [2]],
          [[2, 3], [3]],
          [[1, 3], [2]],
          [[1, 3], [3]]]

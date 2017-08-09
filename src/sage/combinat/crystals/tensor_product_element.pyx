@@ -1,5 +1,5 @@
 """
-Tensor Products of Crystals Elements
+Tensor Products of Crystal Elements
 
 AUTHORS:
 
@@ -56,6 +56,33 @@ cdef class ImmutableListWithParent(ClonableArray):
             sage: TestSuite(b).run()
         """
         ClonableArray.__init__(self, parent, list, check=False)
+
+    cpdef long _hash_(self) except? -1:
+        """
+        Return the hash of ``self``.
+
+        TESTS::
+
+            sage: b = crystals.Tableaux(['A',2], shape=[2,1]).module_generators[0]
+            sage: b._hash_() == hash(b)
+            True
+        """
+        return hash(tuple(self._list))
+
+    def __setstate__(self, state):
+        """
+        For unpickling old pickles.
+
+        EXAMPLES::
+
+            sage: T = crystals.Tableaux(['A',2], shape=[2,1])
+            sage: b = T.module_generators[0]
+            sage: b.__setstate__([T, {'_list': list(b)}])
+        """
+        self._parent = state[0]
+        self._list = state[1]['_list']
+        self._is_immutable = True
+        self._hash = 0
 
     def reversed(self):
         """
@@ -278,7 +305,7 @@ cdef class TensorProductOfCrystalsElement(ImmutableListWithParent):
 
         INPUT:
 
-        - ``i`` -- An element of the index set
+        - ``i`` -- an element of the index set
 
         EXAMPLES::
 
@@ -298,7 +325,7 @@ cdef class TensorProductOfCrystalsElement(ImmutableListWithParent):
 
         INPUT:
 
-        - ``i`` -- An element of the index set
+        - ``i`` -- an element of the index set
 
         EXAMPLES::
 
@@ -346,9 +373,9 @@ cdef class TensorProductOfCrystalsElement(ImmutableListWithParent):
 
         INPUT:
 
-        - ``i`` -- An element of the index set
+        - ``i`` -- an element of the index set
 
-        - ``k`` -- The (1-based) index of the tensor factor of ``self``
+        - ``k`` -- the (1-based) index of the tensor factor of ``self``
 
         EXAMPLES::
 
@@ -393,7 +420,7 @@ cdef class TensorProductOfCrystalsElement(ImmutableListWithParent):
 
         INPUT:
 
-        - ``i`` -- An element of the index set
+        - ``i`` -- an element of the index set
 
         EXAMPLES::
 
@@ -426,7 +453,7 @@ cdef class TensorProductOfCrystalsElement(ImmutableListWithParent):
 
         INPUT:
 
-        - ``i`` -- An element of the index set
+        - ``i`` -- an element of the index set
 
         EXAMPLES::
 
@@ -677,8 +704,8 @@ cdef class CrystalOfTableauxElement(TensorProductOfRegularCrystalsElement):
     def __init__(self, parent, *args, **options):
         """
         There are several ways to input tableaux, by rows, by columns,
-        as the list of column elements, or as a sequence of numbers
-        in column reading.
+        by columns, as the list of column elements, or as a sequence
+        of numbers in column reading.
 
         EXAMPLES::
 
@@ -846,7 +873,7 @@ cdef class CrystalOfTableauxElement(TensorProductOfRegularCrystalsElement):
     @cached_method
     def to_tableau(self):
         """
-        Returns the Tableau object corresponding to self.
+        Return the :class:`Tableau` object corresponding to ``self``.
 
         EXAMPLES::
 
@@ -882,10 +909,9 @@ cdef class CrystalOfTableauxElement(TensorProductOfRegularCrystalsElement):
 
     def promotion(self):
         """
+        Return the result of applying promotion on ``self``.
+
         Promotion for type A crystals of tableaux of rectangular shape.
-
-        Returns the result of applying promotion on this tableau.
-
         This method only makes sense in type A with rectangular shapes.
 
         EXAMPLES::
@@ -906,10 +932,9 @@ cdef class CrystalOfTableauxElement(TensorProductOfRegularCrystalsElement):
 
     def promotion_inverse(self):
         """
+        Return the result of applying inverse promotion on ``self``.
+
         Inverse promotion for type A crystals of tableaux of rectangular shape.
-
-        Returns the result of applying inverse promotion on this tableau.
-
         This method only makes sense in type A with rectangular shapes.
 
         EXAMPLES::
@@ -935,7 +960,7 @@ cdef class InfinityCrystalOfTableauxElement(CrystalOfTableauxElement):
 
         INPUT:
 
-        - ``i`` -- An element of the index set
+        - ``i`` -- an element of the index set
 
         EXAMPLES::
 
@@ -973,7 +998,7 @@ cdef class InfinityCrystalOfTableauxElement(CrystalOfTableauxElement):
 
         INPUT:
 
-        - ``i`` -- An element of the index set
+        - ``i`` -- an element of the index set
 
         EXAMPLES::
 
@@ -1019,7 +1044,7 @@ cdef class InfinityCrystalOfTableauxElementTypeD(InfinityCrystalOfTableauxElemen
 
         INPUT:
 
-        - ``i`` -- An element of the index set
+        - ``i`` -- an element of the index set
 
         EXAMPLES::
 
@@ -1058,7 +1083,7 @@ cdef class InfinityCrystalOfTableauxElementTypeD(InfinityCrystalOfTableauxElemen
 
         INPUT:
 
-        - ``i`` -- An element of the index set
+        - ``i`` -- an element of the index set
 
         EXAMPLES::
 
@@ -1086,4 +1111,8 @@ cdef class InfinityCrystalOfTableauxElementTypeD(InfinityCrystalOfTableauxElemen
             for j in range(i-1):
                 ret._list.insert(0, self._parent.letters(j+1))
         return ret
+
+# for unpickling
+from sage.structure.sage_object import register_unpickle_override
+register_unpickle_override('sage.combinat.crystals.tensor_product', 'ImmutableListWithParent',  ImmutableListWithParent)
 

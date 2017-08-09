@@ -13,13 +13,13 @@ Affine Crystals
 #****************************************************************************
 
 from sage.misc.abstract_method import abstract_method
-from sage.categories.affine_derived_crystals import RegularAffineDerivedSubalgebraCrystals
+from sage.categories.loop_crystals import RegularLoopCrystals
 from sage.structure.element import parent
 from sage.structure.parent import Parent
 from sage.structure.unique_representation import UniqueRepresentation
 from sage.structure.element_wrapper import ElementWrapper
 from sage.combinat.root_system.cartan_type import CartanType
-from sage.structure.sage_object import richcmp
+from sage.structure.richcmp import richcmp
 
 
 class AffineCrystalFromClassical(UniqueRepresentation, Parent):
@@ -112,7 +112,7 @@ class AffineCrystalFromClassical(UniqueRepresentation, Parent):
             sage: TestSuite(A).run()
         """
         if category is None:
-            category = RegularAffineDerivedSubalgebraCrystals()
+            category = RegularLoopCrystals()
         self._cartan_type = cartan_type
         Parent.__init__(self, category = category)
         self.classical_crystal = classical_crystal;

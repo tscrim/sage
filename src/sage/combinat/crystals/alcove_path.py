@@ -27,10 +27,10 @@ from sage.structure.parent import Parent
 from sage.structure.element import Element
 from sage.structure.element_wrapper import ElementWrapper
 from sage.structure.unique_representation import UniqueRepresentation
-from sage.structure.sage_object import richcmp
+from sage.structure.richcmp import richcmp
 from sage.categories.finite_crystals import FiniteCrystals
 from sage.categories.classical_crystals import ClassicalCrystals
-from sage.categories.affine_derived_crystals import AffineDerivedSubalgebraCrystals
+from sage.categories.loop_crystals import LoopCrystals
 from sage.graphs.all import DiGraph
 from sage.combinat.root_system.cartan_type import CartanType
 from sage.combinat.root_system.root_system import RootSystem
@@ -334,7 +334,7 @@ class CrystalOfAlcovePaths(UniqueRepresentation, Parent):
             self._R = RootsWithHeight(starting_weight)
             self._finite_cartan_type = True
         elif cartan_type.is_finite() and not highest_weight_crystal:
-            Parent.__init__(self, category=AffineDerivedSubalgebraCrystals().Finite())
+            Parent.__init__(self, category=LoopCrystals().Finite())
             self._R = RootsWithHeight(starting_weight)
             self._finite_cartan_type = True
             self._cartan_type = cartan_type.affine()
@@ -1769,11 +1769,10 @@ class RootsWithHeightElement(Element):
             sage: v1 = rl.from_vector(vector([1,1]))
             sage: v2 = rl.from_vector(vector([1]))
             sage: x1 = R(v1,1) ; x2 = R(v1,0) ; x3 = R(v2,1)
-            sage: x1.__cmp__(x2)
-            1
-            sage: x1.__cmp__(x3)
-            -1
-
+            sage: x1 < x2
+            False
+            sage: x1 < x3
+            True
         """
         # I suspect that if you redefine this method to produce a
         # different (valid)  `\lambda`-chain the rest of the
@@ -1822,7 +1821,7 @@ def _test_some_specific_examples(clss=CrystalOfAlcovePaths):
         (0,8)     : {(0,5)       : 1 }
         })
 
-    if (G.is_isomorphic(GT) != True):
+    if not G.is_isomorphic(GT):
         return False
     else:
         print("G2 example passed.")
@@ -1848,7 +1847,7 @@ def _test_some_specific_examples(clss=CrystalOfAlcovePaths):
         (0, 6, 7):{ (0, 1, 7): 2}
         })
 
-    if (G.is_isomorphic(GT) != True):
+    if not G.is_isomorphic(GT):
         return False
     else:
         print("C3 example passed.")
@@ -1886,7 +1885,7 @@ def _test_some_specific_examples(clss=CrystalOfAlcovePaths):
         (6, 7, 11):{ (0, 7, 11): 1, (6, 7, 8): 3}
         })
 
-    if (G.is_isomorphic(GT) != True):
+    if not G.is_isomorphic(GT):
         return False
     else:
         print("B3 example 1 passed.")
@@ -1917,7 +1916,7 @@ def _test_some_specific_examples(clss=CrystalOfAlcovePaths):
         (0, 7):{ (0, 1, 7): 1, (0, 2): 3}
         })
 
-    if (G.is_isomorphic(GT) != True):
+    if not G.is_isomorphic(GT):
         return False
     else:
         print("B3 example 2 passed.")
