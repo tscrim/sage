@@ -61,6 +61,7 @@ from sage.modules.all import vector
 from sage.rings.ring import CommutativeAlgebra
 from sage.structure.element import CommutativeAlgebraElement
 from sage.structure.unique_representation import UniqueRepresentation
+from sage.structure.richcmp import richcmp
 from sage.misc.cachefunc import cached_method
 from sage.rings.infinity import Infinity
 
@@ -406,7 +407,7 @@ class SpecialCubicQuotientRingElement(CommutativeAlgebraElement):
 
     __nonzero__ = __bool__
 
-    def __cmp__(self, other):
+    def _richcmp_(self, other, op):
         """
         EXAMPLES::
 
@@ -419,7 +420,7 @@ class SpecialCubicQuotientRingElement(CommutativeAlgebraElement):
             sage: x == x + x - x
             True
         """
-        return cmp(self._triple, other._triple)
+        return richcmp(self._triple, other._triple, op)
 
     def _repr_(self):
         """
@@ -744,7 +745,7 @@ def reduce_negative(Q, p, coeffs, offset, exact_form=None):
     in coeffs[offset]. Note that coeffs[i] will be meaningless for i
     offset after this function is finished.
 
-    EXAMPLE::
+    EXAMPLES::
 
         sage: R.<x> = Integers(5^3)['x']
         sage: Q = x^3 - x + R(1/4)
@@ -845,7 +846,7 @@ def reduce_positive(Q, p, coeffs, offset, exact_form=None):
     in coeffs[offset]. Note that coeffs[i] will be meaningless for i
     offset after this function is finished.
 
-    EXAMPLE::
+    EXAMPLES::
 
         sage: R.<x> = Integers(5^3)['x']
         sage: Q = x^3 - x + R(1/4)
@@ -937,7 +938,7 @@ def reduce_zero(Q, coeffs, offset, exact_form=None):
     in coeffs[offset]. This method completely ignores coeffs[i] for i
     != offset.
 
-    EXAMPLE::
+    EXAMPLES::
 
         sage: R.<x> = Integers(5^3)['x']
         sage: Q = x^3 - x + R(1/4)
@@ -996,7 +997,7 @@ def reduce_all(Q, p, coeffs, offset, compute_exact_form=False):
        The algorithm operates in-place, so the data in coeffs is
        destroyed.
 
-    EXAMPLE::
+    EXAMPLES::
 
         sage: R.<x> = Integers(5^3)['x']
         sage: Q = x^3 - x + R(1/4)

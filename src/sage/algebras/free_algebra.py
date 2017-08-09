@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Free algebras
 
@@ -115,19 +116,24 @@ Note that the letterplace implementation can only be used if the corresponding
     sage: FreeAlgebra(FreeAlgebra(ZZ,2,'ab'), 2, 'x', implementation='letterplace')
     Traceback (most recent call last):
     ...
-    NotImplementedError: The letterplace implementation is not available for the free algebra you requested
-
+    TypeError: The base ring Free Algebra on 2 generators (a, b) over Integer Ring is not a commutative ring
 """
+
 #*****************************************************************************
-#  Copyright (C) 2005 David Kohel <kohel@maths.usyd.edu>
-#  Copyright (C) 2005,2006 William Stein <wstein@gmail.com>
-#  Copyright (C) 2011 Simon King <simon.king@uni-jena.de>
+#       Copyright (C) 2005 David Kohel <kohel@maths.usyd.edu>
+#       Copyright (C) 2005,2006 William Stein <wstein@gmail.com>
+#       Copyright (C) 2011 Simon King <simon.king@uni-jena.de>
 #
-#  Distributed under the terms of the GNU General Public License (GPL)
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
 #                  http://www.gnu.org/licenses/
 #*****************************************************************************
+
 from __future__ import absolute_import
 from six.moves import range
+from six import integer_types
 import six
 
 from sage.categories.rings import Rings
@@ -138,15 +144,12 @@ from sage.monoids.free_monoid_element import FreeMonoidElement
 from sage.algebras.free_algebra_element import FreeAlgebraElement
 from sage.algebras.pbw_algebra import PBWBasisOfFreeAlgebra
 
-import sage.structure.parent_gens
-
 from sage.structure.factory import UniqueFactory
 from sage.misc.cachefunc import cached_method
 from sage.all import PolynomialRing
 from sage.rings.ring import Algebra
-from sage.rings.polynomial.multi_polynomial_libsingular import MPolynomialRing_libsingular
 from sage.categories.algebras_with_basis import AlgebrasWithBasis
-from sage.combinat.free_module import CombinatorialFreeModule, CombinatorialFreeModuleElement
+from sage.combinat.free_module import CombinatorialFreeModule
 from sage.combinat.words.word import Word
 from sage.structure.category_object import normalize_names
 
@@ -265,21 +268,14 @@ class FreeAlgebraFactory(UniqueFactory):
             return tuple(degrees),base_ring
         PolRing = None
         # test if we can use libSingular/letterplace
-        if implementation is not None and implementation != 'generic':
-            try:
-                PolRing = PolynomialRing(base_ring, arg1, arg2,
-                                   sparse=sparse, order=order,
-                                   names=names, name=name,
-                                   implementation=implementation if implementation != 'letterplace' else None)
-                if not isinstance(PolRing, MPolynomialRing_libsingular):
-                    if PolRing.ngens() == 1:
-                        PolRing = PolynomialRing(base_ring, 1, PolRing.variable_names())
-                        if not isinstance(PolRing, MPolynomialRing_libsingular):
-                            raise TypeError
-                    else:
-                        raise TypeError
-            except (TypeError, NotImplementedError) as msg:
-                raise NotImplementedError("The letterplace implementation is not available for the free algebra you requested")
+        if implementation == "letterplace":
+            args = [arg for arg in (arg1, arg2) if arg is not None]
+            kwds = dict(sparse=sparse, order=order, implementation="singular")
+            if name is not None:
+                kwds["name"] = name
+            if names is not None:
+                kwds["names"] = names
+            PolRing = PolynomialRing(base_ring, *args, **kwds)
         if PolRing is not None:
             if degrees is None:
                 return (PolRing,)
@@ -295,7 +291,7 @@ class FreeAlgebraFactory(UniqueFactory):
                     implementation=implementation if implementation != 'letterplace' else None)
         # normalise the generator names
         from sage.all import Integer
-        if isinstance(arg1, (int, long, Integer)):
+        if isinstance(arg1, (Integer,) + integer_types):
             arg1, arg2 = arg2, arg1
         if not names is None:
             arg1 = names
@@ -614,7 +610,7 @@ class FreeAlgebra_generic(CombinatorialFreeModule, Algebra):
                         if T[i]:
                             out.append((i%ngens,T[i]))
                     return M(out)
-                return self.element_class(self, dict([(exp_to_monomial(T),c) for T,c in x.letterplace_polynomial().dict().iteritems()]))
+                return self.element_class(self, {exp_to_monomial(T):c for T,c in six.iteritems(x.letterplace_polynomial().dict())})
         # ok, not a free algebra element (or should not be viewed as one).
         if isinstance(x, six.string_types):
             from sage.all import sage_eval
@@ -744,7 +740,7 @@ class FreeAlgebra_generic(CombinatorialFreeModule, Algebra):
             x = self.gen(i)
             ret[str(x)] = x
         from sage.sets.family import Family
-        return Family(ret)
+        return Family(self.variable_names(), lambda i: ret[i])
 
     @cached_method
     def gens(self):
@@ -880,7 +876,7 @@ class FreeAlgebra_generic(CombinatorialFreeModule, Algebra):
         for i in range(n):
             for j in range(i + 1, n):
                 cmat[i,j] = 1
-        for (to_commute,commuted) in relations.iteritems():
+        for (to_commute,commuted) in six.iteritems(relations):
             #This is dirty, coercion is broken
             assert isinstance(to_commute, FreeAlgebraElement), to_commute.__class__
             assert isinstance(commuted, FreeAlgebraElement), commuted
@@ -908,7 +904,7 @@ class FreeAlgebra_generic(CombinatorialFreeModule, Algebra):
 
     def poincare_birkhoff_witt_basis(self):
         """
-        Return the Poincare-Birkhoff-Witt (PBW) basis of ``self``.
+        Return the Poincaré-Birkhoff-Witt (PBW) basis of ``self``.
 
         EXAMPLES::
 
@@ -922,7 +918,7 @@ class FreeAlgebra_generic(CombinatorialFreeModule, Algebra):
 
     def pbw_element(self, elt):
         """
-        Return the element ``elt`` in the Poincare-Birkhoff-Witt basis.
+        Return the element ``elt`` in the Poincaré-Birkhoff-Witt basis.
 
         EXAMPLES::
 

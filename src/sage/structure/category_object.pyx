@@ -57,8 +57,8 @@ This example illustrates generators for a free module over `\ZZ`.
 
 from __future__ import absolute_import, division, print_function
 
-from sage.structure.misc import dir_with_other_class
-from sage.structure.misc cimport getattr_from_other_class
+from sage.cpython.getattr import dir_with_other_class
+from sage.cpython.getattr cimport getattr_from_other_class
 from sage.categories.category import Category
 from sage.structure.debug_options cimport debug
 from sage.misc.cachefunc import cached_method
@@ -436,19 +436,6 @@ cdef class CategoryObject(SageObject):
         elif not isinstance(names, tuple):
             raise TypeError("names must be a tuple of strings")
         self._names = names
-
-    def normalize_names(self, ngens, names):
-        """
-        TESTS::
-
-            sage: ZZ.normalize_names(1, "x")
-            doctest:...: DeprecationWarning: The method normalize_names() has been changed to a function
-            See http://trac.sagemath.org/19675 for details.
-            ('x',)
-        """
-        from sage.misc.superseded import deprecation
-        deprecation(19675, "The method normalize_names() has been changed to a function")
-        return normalize_names(ngens, names)
 
     def variable_names(self):
         """

@@ -184,8 +184,6 @@ If the above script is called ``factor``, here is an example usage:
 
     bash $ ./factor 2006
     2 * 17 * 59
-    bash $ ./factor "32*x^5-1"
-    (2*x - 1) * (16*x^4 + 8*x^3 + 4*x^2 + 2*x + 1)
 
 Data Types
 ==========
@@ -459,7 +457,7 @@ You can turn the above dictionary into a list with the same data:
 
 ::
 
-    sage: d.items()
+    sage: list(d.items())
     [(1, 5), ('sage', 17), (Integer Ring, Finite Field of size 7)]
 
 A common idiom is to iterate through the pairs in a dictionary:
@@ -467,7 +465,7 @@ A common idiom is to iterate through the pairs in a dictionary:
 ::
 
     sage: d = {2:4, 3:9, 4:16}
-    sage: [a*b for a, b in d.iteritems()]
+    sage: [a*b for a, b in d.items()]
     [8, 27, 64]
 
 A dictionary is unordered, as the last output illustrates.
@@ -651,16 +649,6 @@ convert both numbers into the same type if possible:
     False
     sage: 2/3 < 3/2;   3/2 < 3/1
     True
-    True
-
-Almost any two objects may be compared; there is no assumption that
-the objects are equipped with a total ordering.
-
-::
-
-    sage: 2 < CC(3.1,1)
-    True
-    sage: 5 < VectorSpace(QQ,3)   # output can be somewhat random
     True
 
 Use bool for symbolic inequalities:
