@@ -62,6 +62,7 @@ COMMANDS_CACHE = '%s/maxima_commandlist_cache.sobj'%DOT_SAGE
 
 from sage.misc.misc import ECL_TMP
 from sage.misc.multireplace import multiple_replace
+from sage.structure.richcmp import richcmp, rich_to_bool
 import sage.server.support
 
 from .interface import (Interface, InterfaceElement, InterfaceFunctionElement,
@@ -431,8 +432,8 @@ class MaximaAbstract(ExtraTabCompletion, Interface):
 
         EXAMPLES::
 
-            sage: maxima.version()
-            '5.39.0'
+            sage: maxima.version()  # random
+            '5.41.0'
         """
         return maxima_version()
 
@@ -1136,7 +1137,7 @@ class MaximaAbstractElement(ExtraTabCompletion, InterfaceElement):
         P = self._check_valid()
         return P.eval('is(%s = 0);'%self.name()) == P._false_symbol() # but be careful, since for relations things like is(equal(a,b)) are what Maxima needs
 
-    def __cmp__(self, other):
+    def _richcmp_(self, other, op):
         """
         Compare this Maxima object with ``other``.
 
@@ -1144,7 +1145,7 @@ class MaximaAbstractElement(ExtraTabCompletion, InterfaceElement):
 
         - ``other`` - an object to compare to
 
-        OUTPUT: integer
+        OUTPUT: boolean
 
         EXAMPLES::
 
@@ -1166,22 +1167,21 @@ class MaximaAbstractElement(ExtraTabCompletion, InterfaceElement):
             sage: -f == g.diff('x')
             True
         """
-
         # thanks to David Joyner for telling me about using "is".
         # but be careful, since for relations things like is(equal(a,b))
         # are what Maxima needs
         P = self.parent()
         try:
             if P.eval("is (%s < %s)"%(self.name(), other.name())) == P._true_symbol():
-                return -1
+                return rich_to_bool(op, -1)
             elif P.eval("is (%s > %s)"%(self.name(), other.name())) == P._true_symbol():
-                return 1
+                return rich_to_bool(op, 1)
             elif P.eval("is (%s = %s)"%(self.name(), other.name())) == P._true_symbol():
-                return 0
+                return rich_to_bool(op, 0)
         except TypeError:
             pass
-        return cmp(repr(self),repr(other))
-        # everything is supposed to be comparable in Python,
+        return richcmp(repr(self), repr(other), op)
+        # everything is supposed to be comparable in Python2,
         # so we define the comparison thus when no comparable
         # in interfaced system.
 
@@ -1743,7 +1743,7 @@ class MaximaAbstractElement(ExtraTabCompletion, InterfaceElement):
             sage: y,d = var('y,d')
             sage: f = function('f')
             sage: latex(maxima(derivative(f(x*y), x)))
-            \left(\left.{{{\it \partial}}\over{{\it \partial}\,  {\it t_0}}}\,f\left({\it t_0}\right)  \right|_{{\it t_0}={\it x}\,  {\it y}}\right)\,{\it y}
+            \left(\left.{{{\it \partial}}\over{{\it \partial}\,  {\it t}_{0}}}\,f\left({\it t}_{0}\right)  \right|_{{\it t}_{0}={\it x}\,  {\it y}}\right)\,{\it y}
             sage: latex(maxima(derivative(f(x,y,d), d,x,x,y)))
             {{{\it \partial}^4}\over{{\it \partial}\,{\it d}\,  {\it \partial}\,{\it x}^2\,{\it \partial}\,  {\it y}}}\,f\left({\it x} ,  {\it y} , {\it d}\right)
             sage: latex(maxima(d/(d-2)))
@@ -2192,8 +2192,8 @@ def maxima_version():
     EXAMPLES::
 
         sage: from sage.interfaces.maxima_abstract import maxima_version
-        sage: maxima_version()
-        '5.39.0'
+        sage: maxima_version()  # random
+        '5.41.0'
     """
     return os.popen('maxima --version').read().split()[-1]
 
