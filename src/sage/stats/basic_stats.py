@@ -179,7 +179,7 @@ def std(v, bias=False):
         sage: std([1..6], bias=False)
         sqrt(7/2)
         sage: std([e, pi])
-        sqrt(1/2)*sqrt((pi - e)^2)
+        sqrt(1/2)*abs(pi - e)
         sage: std([])
         NaN
         sage: std([I, sqrt(2), 3/5])
@@ -202,7 +202,6 @@ def std(v, bias=False):
 
     import numpy
 
-    x = 0
     if isinstance(v, numpy.ndarray):
         # accounts for numpy arrays
         if bias:
@@ -215,6 +214,7 @@ def std(v, bias=False):
         return NaN
 
     return sqrt(variance(v, bias=bias))
+
 
 def variance(v, bias=False):
     """
