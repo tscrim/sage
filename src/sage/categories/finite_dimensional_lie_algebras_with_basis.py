@@ -90,9 +90,12 @@ class FiniteDimensionalLieAlgebrasWithBasis(CategoryWithAxiom_over_base_ring):
             I = self._basis_ordering
             try:
                 names = [str(x) for x in I]
+                def names_map(x): return x
                 F = FreeAlgebra(self.base_ring(), names)
             except ValueError:
                 names = ['b{}'.format(i) for i in range(self.dimension())]
+                self._UEA_names_map = {g: names[i] for i,g in enumerate(I)}
+                names_map = self._UEA_names_map.__getitem__
                 F = FreeAlgebra(self.base_ring(), names)
             # ``F`` is the free algebra over the basis of ``self``. The
             # universal enveloping algebra of ``self`` will be constructed
@@ -100,7 +103,8 @@ class FiniteDimensionalLieAlgebrasWithBasis(CategoryWithAxiom_over_base_ring):
             d = F.gens_dict()
             rels = {}
             S = self.structure_coefficients(True)
-            get_var = lambda g: d[names[I.index(g)]]
+            # Construct the map from indices to names of the UEA
+            def get_var(g): return d[names_map(g)]
             # The function ``get_var`` sends an element of the basis of
             # ``self`` to the corresponding element of ``F``.
             for k in S.keys():
@@ -752,7 +756,7 @@ class FiniteDimensionalLieAlgebrasWithBasis(CategoryWithAxiom_over_base_ring):
             return FiniteDimensionalAlgebra(R, mats, names=self._names)
 
     class ElementMethods:
-        def adjoint_matrix(self): # In #11111 (more or less) by using matrix of a mophism
+        def adjoint_matrix(self): # In #11111 (more or less) by using matrix of a morphism
             """
             Return the matrix of the adjoint action of ``self``.
 
@@ -799,10 +803,28 @@ class FiniteDimensionalLieAlgebrasWithBasis(CategoryWithAxiom_over_base_ring):
                 sage: L = LieAlgebra(associative=D)
                 sage: L.an_element().to_vector()
                 (1, 1, 1, 1, 1, 1, 1, 1)
+
+            TESTS:
+
+            Check that the error raised agrees with the one
+            from ``monomial_coefficients()`` (see :trac:`25007`)::
+
+                sage: L = lie_algebras.sp(QQ, 4, representation='matrix')
+                sage: x = L.an_element()
+                sage: x.monomial_coefficients()
+                Traceback (most recent call last):
+                ...
+                NotImplementedError: the basis is not defined
+                sage: x.to_vector()
+                Traceback (most recent call last):
+                ...
+                NotImplementedError: the basis is not defined
             """
+            mc = self.monomial_coefficients(copy=False)
             M = self.parent().module()
             B = M.basis()
-            return M.sum(self[k] * B[i] for i,k in enumerate(self.parent()._basis_ordering))
+            return M.sum(mc[k] * B[i] for i,k in enumerate(self.parent()._basis_ordering)
+                         if k in mc)
 
         _vector_ = to_vector
 
