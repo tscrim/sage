@@ -27,6 +27,8 @@ Comprehensive Module list
     sage/combinat/binary_tree
     sage/combinat/cartesian_product
     sage/combinat/catalog_partitions
+    sage/combinat/chas/__init__
+    sage/combinat/chas/wqsym
     sage/combinat/cluster_algebra_quiver/__init__
     sage/combinat/cluster_algebra_quiver/all
     sage/combinat/cluster_algebra_quiver/cluster_seed
@@ -53,6 +55,7 @@ Comprehensive Module list
     sage/combinat/crystals/affinization
     sage/combinat/crystals/alcove_path
     sage/combinat/crystals/all
+    sage/combinat/crystals/bkk_crystals
     sage/combinat/crystals/catalog
     sage/combinat/crystals/catalog_elementary_crystals
     sage/combinat/crystals/catalog_infinity_crystals
@@ -65,6 +68,7 @@ Comprehensive Module list
     sage/combinat/crystals/highest_weight_crystals
     sage/combinat/crystals/induced_structure
     sage/combinat/crystals/infinity_crystals
+    sage/combinat/crystals/kac_modules
     sage/combinat/crystals/kirillov_reshetikhin
     sage/combinat/crystals/kyoto_path_model
     sage/combinat/crystals/letters
@@ -125,7 +129,9 @@ Comprehensive Module list
     sage/combinat/graph_path
     sage/combinat/gray_codes
     sage/combinat/growth
+    sage/combinat/grossman_larson_algebras
     sage/combinat/hall_polynomial
+    sage/combinat/hillman_grassl
     sage/combinat/integer_lists/base
     sage/combinat/integer_lists/lists
     sage/combinat/integer_lists/invlex
@@ -166,6 +172,7 @@ Comprehensive Module list
     sage/combinat/plane_partition
     sage/combinat/partition
     sage/combinat/partition_algebra
+    sage/combinat/partition_kleshchev
     sage/combinat/partition_tuple
     sage/combinat/partitions
     sage/combinat/perfect_matching
@@ -236,6 +243,7 @@ Comprehensive Module list
     sage/combinat/root_system/root_lattice_realizations
     sage/combinat/root_system/root_space
     sage/combinat/root_system/root_system
+    sage/combinat/root_system/type_super_A
     sage/combinat/root_system/type_A
     sage/combinat/root_system/type_A_affine
     sage/combinat/root_system/type_A_infinity
@@ -278,6 +286,7 @@ Comprehensive Module list
     sage/combinat/sf/dual
     sage/combinat/sf/elementary
     sage/combinat/sf/hall_littlewood
+    sage/combinat/sf/hecke
     sage/combinat/sf/homogeneous
     sage/combinat/sf/jack
     sage/combinat/sf/k_dual
@@ -297,6 +306,7 @@ Comprehensive Module list
     sage/combinat/sf/sfa
     sage/combinat/sf/witt
     sage/combinat/shard_order
+    sage/combinat/shifted_primed_tableau
     sage/combinat/shuffle
     sage/combinat/sidon_sets
     sage/combinat/similarity_class_type
@@ -334,6 +344,7 @@ Comprehensive Module list
     sage/combinat/subsets_pairwise
     sage/combinat/subword
     sage/combinat/subword_complex
+    sage/combinat/superpartition
     sage/combinat/symmetric_group_algebra
     sage/combinat/symmetric_group_representations
     sage/combinat/tableau
