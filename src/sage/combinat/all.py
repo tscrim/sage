@@ -134,7 +134,7 @@ from .partition_algebra import SetPartitionsAk, SetPartitionsPk, SetPartitionsTk
 lazy_import('sage.combinat.partition_shifting_algebras', 'ShiftingOperatorAlgebra')
 
 # Diagram algebra
-from .diagram_algebras import PartitionAlgebra, BrauerAlgebra, TemperleyLiebAlgebra, PlanarAlgebra, PropagatingIdeal
+from .diagram_algebras import PartitionAlgebra, BrauerAlgebra, TemperleyLiebAlgebra, PlanarAlgebra, MotzkinAlgebra, PropagatingIdeal
 
 # Descent algebra
 lazy_import('sage.combinat.descent_algebra', 'DescentAlgebra')

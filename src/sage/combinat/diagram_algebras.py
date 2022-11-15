@@ -32,7 +32,7 @@ from sage.structure.unique_representation import UniqueRepresentation
 from sage.combinat.combinat import bell_number, catalan_number
 from sage.structure.global_options import GlobalOptions
 from sage.combinat.combinat_cython import (perfect_matchings_iterator,
-                                           set_partition_composition)
+                                           set_partition_composition, matching_composition)
 from sage.combinat.set_partition import SetPartitions, AbstractSetPartition
 from sage.combinat.set_partition_iterator import set_partition_iterator
 from sage.combinat.symmetric_group_algebra import SymmetricGroupAlgebra_n
@@ -135,12 +135,43 @@ def brauer_diagrams(k):
             yield [(s[a],s[b]) for a,b in p] + [[k, -k]]
 
 
+def partial_brauer_diagrams(k):
+    r"""
+    Return a generator of all partial Brauer diagrams of order ``k``.
+
+    A partial Brauer diagram of order `k` is a partition diagram of
+    order `k` with block size at most 2.
+
+    INPUT:
+
+     - ``k`` -- the order of the Brauer diagrams
+
+    EXAMPLES::
+
+        sage: import sage.combinat.diagram_algebras as da
+        sage: [SetPartition(p) for p in da.partial_brauer_diagrams(2)]
+        [[(1, 2), (-2, -1)], [(1, -2), (2, -1)], [(1, -1), (2, -2)],
+         [(-2, -1), (1,), (2,)], [(2, -1), (1,), (-2,)], [(2, -2), (1,), (-1,)],
+         [(1, -1), (2,), (-2,)], [(1, -2), (2,), (-1,)], [(1, 2), (-2,), (-1,)],
+         [(1,), (2,), (-2,), (-1,)]]
+    """
+    if k not in ZZ:
+        raise NotImplementedError
+    s = list(range(1,k+1)) + list(range(-k,0))
+    for m in range(0, len(s)+1, 2):
+        for X in itertools.combinations(s, m):
+            Y = [y for y in s if y not in X]
+            assert len(Y) == 2*(k-m/2) and m % 2 == 0
+            for p in perfect_matchings_iterator(k-m//2):
+                yield [(Y[a],Y[b]) for a,b in p] + [(x,) for x in X]
+
+
 def temperley_lieb_diagrams(k):
     r"""
     Return a generator of all Temperley--Lieb diagrams of order ``k``.
 
     A Temperley--Lieb diagram of order `k` is a partition diagram of order `k`
-    with block size  2 and is planar.
+    with block size 2 and is planar.
 
     INPUT:
 
@@ -158,6 +189,29 @@ def temperley_lieb_diagrams(k):
         if is_planar(i):
             yield i
 
+
+def motzkin_diagrams(k):
+    r"""
+    Return a generator of all Motzkin diagrams of order ``k``.
+
+    A Motzkin diagram of order `k` is a partition diagram of order `k`
+    with block size at most 2 and is planar.
+
+    INPUT:
+
+    - ``k`` -- the order of the Motzkin diagrams
+
+    EXAMPLES::
+
+        sage: import sage.combinat.diagram_algebras as da
+        sage: [SetPartition(p) for p in da.motzkin_diagrams(2)]
+        [{{-2, -1}, {1, 2}}, {{-2, 2}, {-1, 1}}]
+        sage: [SetPartition(p) for p in da.motzkin_diagrams(5/2)]
+        [{{-3, 3}, {-2, -1}, {1, 2}}, {{-3, 3}, {-2, 2}, {-1, 1}}]
+    """
+    for i in partial_brauer_diagrams(k):
+        if is_planar(i):
+            yield i
 
 def planar_diagrams(k):
     r"""
@@ -480,12 +534,12 @@ class AbstractPartitionDiagram(AbstractSetPartition):
         Compose ``self`` with ``other``.
 
         The composition of two diagrams `X` and `Y` is given by placing
-        `X` on top of `Y` and removing all loops.
+        `X` on top of `Y` and removing all disconnected components.
 
         OUTPUT:
 
         A tuple where the first entry is the composite diagram and the
-        second entry is how many loop were removed.
+        second entry is how many components were removed.
 
         .. NOTE::
 
@@ -499,8 +553,8 @@ class AbstractPartitionDiagram(AbstractSetPartition):
             sage: pd([[1,2],[-1,-2]]).compose(pd([[1,2],[-1,-2]]))
             ({{-2, -1}, {1, 2}}, 1)
         """
-        (composite_diagram, loops_removed) = set_partition_composition(self._base_diagram, other._base_diagram)
-        return (self.__class__(self.parent(), composite_diagram, check=check), loops_removed)
+        (composite_diagram, num_removed) = set_partition_composition(self._base_diagram, other._base_diagram)
+        return (self.__class__(self.parent(), composite_diagram, check=check), num_removed)
 
     def propagating_number(self):
         r"""
@@ -591,6 +645,40 @@ class AbstractPartitionDiagram(AbstractSetPartition):
             {{-3}, {-2, 2, 3}, {-1, 1}}
         """
         return self.parent([[-i for i in part] for part in self])
+
+
+class AbstractMatchingnDiagram(AbstractPartitionDiagram):
+    r"""
+    Abstract base class for all diagrams whose parts have at most size `2`
+    that implement a two parameter composition.
+    """
+    def compose(self, other, check=True):
+        r"""
+        Compose ``self`` with ``other``.
+
+        The composition of two diagrams `X` and `Y` is given by placing
+        `X` on top of `Y` and removing all loops and paths.
+
+        OUTPUT:
+
+        A tuple where the first entry is the composite diagram, the
+        second entry is how many loop were removed, and the third
+        entry is how many paths were removed.
+
+        .. NOTE::
+
+            This is not really meant to be called directly, but it works
+            to call it this way if desired.
+
+        EXAMPLES::
+
+            sage: import sage.combinat.diagram_algebras as da
+            sage: pd = da.AbstractPartitionDiagrams(2)
+            sage: pd([[1,2],[-1,-2]]).compose(pd([[1,2],[-1,-2]]))
+            ({{-2, -1}, {1, 2}}, 1)
+        """
+        (composite_diagram, loops_removed, paths_removed) = matching_composition(self._base_diagram, other._base_diagram)
+        return (self.__class__(self.parent(), composite_diagram, check=check), loops_removed, paths_removed)
 
 
 class IdealDiagram(AbstractPartitionDiagram):
@@ -750,7 +838,7 @@ class TemperleyLiebDiagram(AbstractPartitionDiagram):
 
         sage: from sage.combinat.diagram_algebras import TemperleyLiebDiagrams
         sage: TemperleyLiebDiagrams(2)
-        Temperley Lieb diagrams of order 2
+        Temperley-Lieb diagrams of order 2
         sage: TemperleyLiebDiagrams(2).list()
         [{{-2, -1}, {1, 2}}, {{-2, 2}, {-1, 1}}]
     """
@@ -768,7 +856,7 @@ class TemperleyLiebDiagram(AbstractPartitionDiagram):
             sage: TemperleyLiebDiagram([[1,-1]])
             {{-1, 1}}
             sage: TemperleyLiebDiagram([[1, -1]]).parent()
-            Temperley Lieb diagrams of order 1
+            Temperley-Lieb diagrams of order 1
         """
         order = max(v for p in diag for v in p)
         TLD = TemperleyLiebDiagrams(order)
@@ -798,6 +886,71 @@ class TemperleyLiebDiagram(AbstractPartitionDiagram):
         super().check()
         if any(len(block) != 2 for block in self):
             raise ValueError("all blocks of %s must be of size 2" % self )
+        if not self.is_planar():
+            raise ValueError("the diagram %s must be planar" % self)
+
+
+class MotzkinDiagram(AbstractMatchingnDiagram):
+    r"""
+    The element class for a Motzkin diagram.
+
+    EXAMPLES::
+
+        sage: from sage.combinat.diagram_algebras import MotzkinDiagram, MotzkinDiagrams
+        sage: MotzkinDiagrams(1)
+        Motzkin diagrams of order 1
+        sage: MotzkinDiagrams(1).list()
+        [{{-1, 1}}, {{-1}, {1}}]
+        sage: MotzkinDiagram([[1,-1]])
+        {{-1, 1}}
+        sage: MotzkinDiagram(((1,-2),(2,-1))).parent()
+        Partition diagrams of order 2
+    """
+    @staticmethod
+    def __classcall_private__(cls, diag):
+        """
+        Normalize input to initialize diagram.
+
+        The order of the diagram element is the maximum value found in
+        the list of lists.
+
+        EXAMPLES::
+
+            sage: from sage.combinat.diagram_algebras import PartitionDiagram
+            sage: PartitionDiagram([[1],[-1]])
+            {{-1}, {1}}
+            sage: PartitionDiagram([[1],[-1]]).parent()
+            Partition diagrams of order 1
+        """
+        order = max(v for p in diag for v in p)
+        MD = MotzkinDiagrams(order)
+        return MD(diag)
+
+    def check(self):
+        r"""
+        Check the validity of the input for ``self``.
+
+        TESTS::
+
+            sage: from sage.combinat.diagram_algebras import MotzkinDiagram
+            sage: d1 = MotzkinDiagram([[1,2],[-1,-2]])  # indirect doctest
+            sage: d2 = MotzkinDiagram([[1,-2],[2,-1]])  # indirect doctest
+            Traceback (most recent call last):
+            ...
+            ValueError: the diagram {{-2, 1}, {-1, 2}} must be planar
+            sage: d3 = MotzkinDiagram([[1,2,-1,-3]])    # indirect doctest
+            Traceback (most recent call last):
+            ...
+            ValueError: {{-3, -1, 1, 2}} does not represent two rows of vertices of order 2
+            sage: d4 = MotzkinDiagram([[1,-2],[-1],[2]])  # indirect doctest
+            sage: d5 = MotzkinDiagram([[1,-2,-1],[2]])  # indirect doctest
+            Traceback (most recent call last):
+            ...
+            ValueError: all blocks of {{-2, -1, 1}, {2}} must be of size at most 2
+        """
+        super().check()
+        if any(len(block) > 2 for block in self):
+            raise ValueError("all blocks of %s must be of size at most 2" % self )
         if not self.is_planar():
             raise ValueError("the diagram %s must be planar" % self)
 
@@ -1503,7 +1656,7 @@ class BrauerDiagrams(AbstractPartitionDiagrams):
             r = ZZ(self.order)
         else:
             r = ZZ(self.order + ZZ(1)/ZZ(2))
-        return super().__contains__(obj) and [len(i) for i in obj] == [2]*r
+        return super().__contains__(obj) and all(len(i) == 2 for i in obj)
 
     def cardinality(self):
         r"""
@@ -1645,7 +1798,7 @@ class TemperleyLiebDiagrams(AbstractPartitionDiagrams):
 
         sage: import sage.combinat.diagram_algebras as da
         sage: td = da.TemperleyLiebDiagrams(3); td
-        Temperley Lieb diagrams of order 3
+        Temperley-Lieb diagrams of order 3
         sage: td.list()
         [{{-3, 3}, {-2, -1}, {1, 2}},
          {{-3, 1}, {-2, -1}, {2, 3}},
@@ -1654,7 +1807,7 @@ class TemperleyLiebDiagrams(AbstractPartitionDiagrams):
          {{-3, 3}, {-2, 2}, {-1, 1}}]
 
         sage: td = da.TemperleyLiebDiagrams(5/2); td
-        Temperley Lieb diagrams of order 5/2
+        Temperley-Lieb diagrams of order 5/2
         sage: td.list()
         [{{-3, 3}, {-2, -1}, {1, 2}}, {{-3, 3}, {-2, 2}, {-1, 1}}]
 
@@ -1674,41 +1827,38 @@ class TemperleyLiebDiagrams(AbstractPartitionDiagrams):
         True
     """
     Element = TemperleyLiebDiagram
-    _name = "Temperley Lieb"
+    _name = "Temperley-Lieb"
     _diagram_func = temperley_lieb_diagrams
 
     def cardinality(self):
         r"""
         Return the cardinality of ``self``.
 
-        The number of Temperley--Lieb diagrams of integer order `k` is the
-        `k`-th Catalan number.
+        The number of Motzkin diagrams of integer order `k` is the
+        `2k`-th Motzkin number.
 
         EXAMPLES::
 
             sage: import sage.combinat.diagram_algebras as da
-            sage: td = da.TemperleyLiebDiagrams(3)
-            sage: td.cardinality()
+            sage: md = da.MotzkinDiagrams(3)
+            sage: md.cardinality()
             5
         """
-        if self.order in ZZ:
-            return catalan_number(ZZ(self.order))
-        else:
-            return catalan_number(ZZ(self.order - 1/2))
+        return super().cardinality()
 
     def __contains__(self, obj):
         r"""
         TESTS::
 
             sage: import sage.combinat.diagram_algebras as da
-            sage: td = da.TemperleyLiebDiagrams(2)
-            sage: td.an_element() in td
+            sage: md = da.MotzkinDiagrams(2)
+            sage: md.an_element() in md
             True
-            sage: td([[1,2],[-1,-2]]) in td
+            sage: md([[1,2],[-1,-2]]) in md
             True
-            sage: [[1,2],[-1,-2]] in td
+            sage: [[1,2],[-1,-2]] in md
             True
-            sage: [[1,-2],[-1,2]] in td
+            sage: [[1,-2],[-1,2]] in md
             False
         """
         if not hasattr(obj, '_base_diagram'):
@@ -1843,6 +1993,54 @@ class IdealDiagrams(AbstractPartitionDiagrams):
             except (ValueError, TypeError):
                 return False
         return super().__contains__(obj) and obj.propagating_number() < self.order
+
+
+class MotzkinDiagrams(AbstractPartitionDiagrams):
+    r"""
+    All Motzkin diagrams of integer order.
+
+    If `k` is an integer then an ideal diagram of order `k` is a partition
+    diagram of order `k` with propagating number less than `k`.
+
+    EXAMPLES::
+
+        sage: import sage.combinat.diagram_algebras as da
+        sage: id = da.IdealDiagrams(3)
+        sage: id.an_element() in id
+        True
+        sage: id.cardinality() == len(id.list())
+        True
+        sage: da.IdealDiagrams(3/2).list()
+        [{{-2, -1, 1, 2}},
+         {{-2, 1, 2}, {-1}},
+         {{-2, -1, 2}, {1}},
+         {{-2, 2}, {-1}, {1}}]
+    """
+    Element = MotzkinDiagram
+    _name = "Motzkin"
+    _diagram_func = motzkin_diagrams
+
+    def __contains__(self, obj):
+        r"""
+        TESTS::
+
+            sage: import sage.combinat.diagram_algebras as da
+            sage: id = da.IdealDiagrams(2)
+            sage: id.an_element() in id
+            True
+            sage: id([[1,2],[-1,-2]]) in id
+            True
+            sage: [[1,2],[-1,-2]] in id
+            True
+            sage: [[1,-2],[-1,2]] in id
+            False
+        """
+        if not hasattr(obj, '_base_diagram'):
+            try:
+                obj = self._element_constructor_(obj)
+            except (ValueError, TypeError):
+                return False
+        return super().__contains__(obj) and all(len(i) <= 2 for i in obj)
 
 
 class DiagramAlgebra(CombinatorialFreeModule):
@@ -2279,14 +2477,12 @@ class PartitionAlgebra(DiagramBasis, UnitDiagramMixin):
     INPUT:
 
     - ``k`` -- rank of the algebra
-
     - ``q`` -- the deformation parameter `q`
 
     OPTIONAL ARGUMENTS:
 
     - ``base_ring`` -- (default ``None``) a ring containing ``q``; if
       ``None``, then Sage automatically chooses the parent of ``q``
-
     - ``prefix`` -- (default ``"P"``) a label for the basis elements
 
     EXAMPLES:
@@ -3676,14 +3872,12 @@ class BrauerAlgebra(SubPartitionAlgebra, UnitDiagramMixin):
     INPUT:
 
     - ``k`` -- rank of the algebra
-
     - ``q`` -- the deformation parameter `q`
 
     OPTIONAL ARGUMENTS:
 
     - ``base_ring`` -- (default ``None``) a ring containing ``q``; if ``None``
       then just takes the parent of ``q``
-
     - ``prefix`` -- (default ``"B"``) a label for the basis elements
 
     EXAMPLES:
@@ -3878,14 +4072,12 @@ class TemperleyLiebAlgebra(SubPartitionAlgebra, UnitDiagramMixin):
     INPUT:
 
     - ``k`` -- rank of the algebra
-
     - ``q`` -- the deformation parameter `q`
 
     OPTIONAL ARGUMENTS:
 
     - ``base_ring`` -- (default ``None``) a ring containing ``q``; if ``None``
       then just takes the parent of ``q``
-
     - ``prefix`` -- (default ``"T"``) a label for the basis elements
 
     EXAMPLES:
@@ -3898,12 +4090,12 @@ class TemperleyLiebAlgebra(SubPartitionAlgebra, UnitDiagramMixin):
         Temperley-Lieb Algebra of rank 2 with parameter x
          over Univariate Polynomial Ring in x over Integer Ring
         sage: T.basis()
-        Lazy family (Term map from Temperley Lieb diagrams of order 2
+        Lazy family (Term map from Temperley-Lieb diagrams of order 2
          to Temperley-Lieb Algebra of rank 2 with parameter x over
          Univariate Polynomial Ring in x over Integer
-         Ring(i))_{i in Temperley Lieb diagrams of order 2}
+         Ring(i))_{i in Temperley-Lieb diagrams of order 2}
         sage: T.basis().keys()
-        Temperley Lieb diagrams of order 2
+        Temperley-Lieb diagrams of order 2
         sage: T.basis().keys()([[-1, 1], [2, -2]])
         {{-2, 2}, {-1, 1}}
         sage: b = T.basis().list(); b
@@ -4248,6 +4440,134 @@ class PropagatingIdeal(SubPartitionAlgebra):
             if n <= 0:
                 raise ValueError("can only take positive integer powers")
             return generic_power(self, n)
+
+class MotzkinAlgebra(DiagramAlgebra, UnitDiagramMixin):
+    r"""
+    A Motzkin algebra.
+
+    The Motzkin algebra of rank `k` is an algebra with basis indexed by the
+    collection of all Motzkin set partitions of
+    `\{1, \ldots, k, -1, \ldots, -k\}`.
+
+    This algebra is thus a subalgebra of the partition algebra. For more
+    information, see :class:`PartitionAlgebra`.
+
+    INPUT:
+
+    - ``k`` -- rank of the algebra
+    - ``q`` -- the deformation parameter `q`
+    - ``t`` -- the deformation parameter `t`
+
+    OPTIONAL ARGUMENTS:
+
+    - ``base_ring`` -- (default ``None``) a ring containing ``q`` and ``t``;
+      if ``None`` then just takes the parent of ``q``
+    - ``prefix`` -- (default ``"M"``) a label for the basis elements
+
+    EXAMPLES:
+
+    We define the planar algebra of rank `2` with parameter
+    `x` over `\ZZ`::
+
+        sage: R.<x,y> = ZZ[]
+        sage: M = algebras.Motzkin(2, x, y, R); Pl
+        Motzkin Algebra of rank 2 with parameters x, y over Multivariate Polynomial Ring in x, y over Integer Ring
+        sage: M.basis().keys()
+        Planar diagrams of order 2
+        sage: M.basis().keys()([[-1, 1], [2, -2]])
+        {{-2, 2}, {-1, 1}}
+        sage: M.basis().list()
+        [Pl{{-2, -1, 1, 2}},
+         Pl{{-2, 1, 2}, {-1}},
+         Pl{{-2}, {-1, 1, 2}},
+         Pl{{-2, -1}, {1, 2}},
+         Pl{{-2}, {-1}, {1, 2}},
+         Pl{{-2, -1, 1}, {2}},
+         Pl{{-2, 1}, {-1}, {2}},
+         Pl{{-2, 2}, {-1, 1}},
+         Pl{{-2, -1, 2}, {1}},
+         Pl{{-2, 2}, {-1}, {1}},
+         Pl{{-2}, {-1, 1}, {2}},
+         Pl{{-2}, {-1, 2}, {1}},
+         Pl{{-2, -1}, {1}, {2}},
+         Pl{{-2}, {-1}, {1}, {2}}]
+        sage: E = Pl([[1,2],[-1,-2]])
+        sage: E^2 == x*E
+        True
+        sage: E^5 == x^4*E
+        True
+    """
+    @staticmethod
+    def __classcall_private__(cls, k, q, t=None, base_ring=None, prefix="M"):
+        r"""
+        Standardize the input by getting the base ring from the parent of
+        the parameter ``q`` if no ``base_ring`` is given.
+
+        TESTS::
+
+            sage: R.<q> = QQ[]
+            sage: Pl1 = algebras.Motzkin(2, q)
+            sage: Pl2 = algebras.Motzkin(2, q, 1, R, 'Pl')
+            sage: Pl1 is Pl2
+            True
+        """
+        if base_ring is None:
+            base_ring = q.parent()
+        if t is None:
+            t = q
+        q = base_ring(q)
+        t = base_ring(t)
+        return super().__classcall__(cls, k, q, t, base_ring, prefix)
+
+    def __init__(self, k, q, t, base_ring, prefix):
+        r"""
+        Initialize ``self``.
+
+        TESTS::
+
+            sage: R.<q,t> = QQ[]
+            sage: MA = algebras.Motzkin(2, q, t, R)
+            sage: TestSuite(MA).run()
+
+            sage: MA = algebras.Motzkin(3, q, t)
+            sage: TestSuite(MA).run(elements=M.basis())
+        """
+        self._t = t
+        DiagramAlgebra.__init__(self, k, q, base_ring, prefix, MotzkinDiagrams(k))
+
+    def _repr_(self):
+        """
+        Return a string representation of ``self``.
+
+        EXAMPLES::
+
+            sage: R.<x,y> = ZZ[]
+            sage: Pl = algebras.Motzkin(2, x, y, R); Pl
+            Planar Algebra of rank 2 with parameters x, y
+             over Multivariate Polynomial Ring in x, y over Integer Ring
+        """
+        txt = "Motzkin Algebra of rank {} with parameters {}, {} over {}"
+        return txt.format(self._k, self._q, self._t, self.base_ring())
+
+    def product_on_basis(self, d1, d2):
+        r"""
+        Return the product `D_{d_1} D_{d_2}` by two basis diagrams.
+
+        TESTS::
+
+            sage: import sage.combinat.diagram_algebras as da
+            sage: R.<x> = QQ[]
+            sage: D = da.DiagramBasis(2, x, R, 'P', da.PartitionDiagrams(2))
+            sage: sp = da.PartitionDiagrams(2)([[1,2],[-1,-2]])
+            sage: D.product_on_basis(sp, sp)
+            x*P{{-2, -1}, {1, 2}}
+        """
+        if not self._indices.is_parent_of(d1):
+            d1 = self._indices(d1)
+        if not self._indices.is_parent_of(d2):
+            d2 = self._indices(d2)
+        (composite_diagram, loops_removed, paths_removed) = d1.compose(d2, check=False)
+        return self.term(composite_diagram, self._q**loops_removed * self._t**paths_removed)
 
 
 def TL_diagram_ascii_art(diagram, use_unicode=False, blobs=[]):

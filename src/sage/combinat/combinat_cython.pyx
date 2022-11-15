@@ -321,10 +321,10 @@ def set_partition_composition(tuple sp1, tuple sp2):
     cdef tuple temp, top, to_remove
     cdef list block = []
     cdef Py_ssize_t i
-    while remaining_bot or cur:
-        if not cur:
-            cur = list(remaining_bot.pop())
-            block = []
+
+    while remaining_bot:
+        cur = list(remaining_bot.pop())
+        block = []
         while cur:
             val = cur.pop()
             if val > 0:
@@ -333,36 +333,165 @@ def set_partition_composition(tuple sp1, tuple sp2):
                 for top in remaining_top:
                     if -val in top:
                         to_remove = top
+                        if len(top) == 1:
+                            # Singleton; nothing more to do
+                            break
                         for entry in top:
                             if entry < 0:
                                 # Check to see if that makes a new connection with
                                 #   something in sp2.
-                                # We go through this in reverse order so that when we
-                                #   pop an element off, we do not need to update i.
-                                for i in reversed(range(len(remaining_bot))):
+                                for i in range(len(remaining_bot)):
                                     temp = <tuple> remaining_bot[i]
                                     if -entry in temp:
                                         remaining_bot.pop(i)
                                         cur.extend(temp)
-                                        continue
+                                        break
+                                is_loop = True
                             else:
+                                # It is on the top of the composed diagram
                                 block.append(entry)
                         break
                 if to_remove:
                     remaining_top.remove(to_remove)
             else:
+                # It is on the bottom of the composed diagram
                 block.append(val)
-        if not cur:
-            if not block:
-                num_loops += 1
-            else:
-                diagram.append(tuple(block))
+
+        if not block:
+            num_loops += 1
+        else:
+            diagram.append(tuple(block))
 
     # Everything else should be completely contained in the top block
     assert all(val > 0 for top in remaining_top for val in top)
     diagram.extend(remaining_top)
 
     return (tuple(diagram), num_loops)
+
+def matching_composition(tuple sp1, tuple sp2):
+    r"""
+    Return a tuple consisting of the composition of the matchings
+    ``sp1`` and ``sp2`` and the number of loops and paths removed from the
+    middle rows of the graph.
+
+    EXAMPLES::
+
+        sage: from sage.combinat.combinat_cython import matching_composition
+        sage: sp1 = ((1,-2),(2,-1))
+        sage: sp2 = ((1,-2),(2,-1))
+        sage: p, lps, pths = matching_composition(sp1, sp2)
+        sage: (SetPartition(p), lps, pths) == (SetPartition([[1,-1],[2,-2]]), 0, 0)
+        True
+    """
+    cdef int num_loops = 0  # The number of loops removed
+    cdef int num_paths = 0  # The number of paths removed
+    cdef list diagram = []  # The resulting composite diagram
+    cdef list remaining_bot = list(sp2)
+    cdef list block, cur
+    cdef tuple temp, to_remove
+    cdef bint is_loop
+    cdef Py_ssize_t i
+    # sp1 is on top of sp2
+    # positive values on top and negative on bottom
+
+    # parse sp1
+    cdef set remaining_top = set()  # the pairs in sp1 not connected to the top
+    cdef dict connectors_top = dict()
+    for temp in sp1:
+        # Check for singletons
+        if len(temp) == 1:
+            if temp[0] > 0:
+                diagram.append(temp)
+            continue
+
+        if temp[0] < 0:
+            if temp[1] < 0:
+                remaining_top.add(tuple(temp))  # connects only to bottom
+            else:
+                connectors_top[temp[0]] = temp[1]
+        else:
+            if temp[1] < 0:
+                connectors_top[temp[1]] = temp[0]
+            else:
+                diagram.append(temp)  # connects only to the top
+
+    while remaining_bot:
+        temp = remaining_bot.pop()
+        # Check for singletons only connected to the bottom
+        if len(temp) == 1:
+            if temp[0] < 0:
+                diagram.append(temp)
+                continue
+
+        cur = list(temp)
+        block = []
+        is_loop = False
+        while cur:
+            val = cur.pop()
+            if val < 0:
+                block.append(val)
+                continue
+            if val > 0:
+                while True:
+                    val = -val
+                    # Find what it is connected to in sp1
+                    # Continue along until we end somewhere or loop around
+                    if val in connectors_top:
+                        # It is connected to the top
+                        block.append(connectors_top[val])
+                        break
+
+                    to_remove = ()
+                    for temp in remaining_top:
+                        if val in temp:
+                            to_remove = temp
+                            break
+                    if not to_remove:
+                        # It is connected to a singleton
+                        break
+
+                    remaining_top.remove(to_remove)
+                    if to_remove[0] == val:
+                        entry = -to_remove[1]
+                    else:
+                        entry = -to_remove[0]
+
+                    # Get the block it is connected to in sp2
+                    for i in range(len(remaining_bot)):
+                        temp = <tuple> remaining_bot[i]
+                        if entry in temp:
+                            remaining_bot.pop(i)
+                            break
+                    else:
+                        # We only have not found anything above we are a loop
+                        is_loop = True
+                        break
+                    if len(temp) == 1:  # singleton
+                        break
+
+                    # Get the other entry of the sp2 block
+                    if temp[0] == entry:
+                        val = temp[1]
+                    else:
+                        val = temp[0]
+                    if val < 0:
+                        block.append(val)
+                        break
+
+        # We have found both end points
+        if not block:
+            if is_loop:
+                num_loops += 1
+            else:
+                num_paths += 1
+        else:
+            diagram.append(tuple(block))
+
+    # Everything else should be completely contained in the top block
+    assert all(all(val > 0 for val in top) for top in remaining_top)
+    diagram.extend(remaining_top)
+
+    return (tuple(diagram), num_loops, num_paths)
 
 
 def conjugate(p):
