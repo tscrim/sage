@@ -198,6 +198,12 @@ class Stream():
         """
         return False
 
+    def is_undefined(self):
+        """
+        Return ``True`` if ``self`` is an undefined stream.
+        """
+        return False
+
 
 class Stream_inexact(Stream):
     """
@@ -1041,6 +1047,12 @@ class Stream_uninitialized(Stream_inexact):
             yield self._target[n]
             n += 1
 
+    def is_undefined(self):
+        """
+        Return ``True`` if ``self`` is an undefined stream.
+        """
+        return self._target is None
+
 
 class Stream_unary(Stream_inexact):
     r"""
@@ -1116,6 +1128,12 @@ class Stream_unary(Stream_inexact):
             True
         """
         return isinstance(other, type(self)) and self._series == other._series
+
+    def is_undefined(self):
+        """
+        Return ``True`` if ``self`` is an undefined stream.
+        """
+        return self._series.is_undefined()
 
 
 class Stream_binary(Stream_inexact):
@@ -1204,6 +1222,12 @@ class Stream_binary(Stream_inexact):
         if not isinstance(other, type(self)):
             return False
         return self._left == other._left and self._right == other._right
+
+    def is_undefined(self):
+        """
+        Return ``True`` if ``self`` is an undefined stream.
+        """
+        return self._left.is_undefined() or self._right.is_undefined()
 
 
 class Stream_binaryCommutative(Stream_binary):
@@ -2285,6 +2309,12 @@ class Stream_scalar(Stream_inexact):
         """
         return self._series.is_nonzero()
 
+    def is_undefined(self):
+        """
+        Return ``True`` if ``self`` is an undefined stream.
+        """
+        return self._series.is_undefined()
+
 
 class Stream_rmul(Stream_scalar):
     """
@@ -2714,6 +2744,12 @@ class Stream_map_coefficients(Stream_inexact):
         return (isinstance(other, type(self)) and self._series == other._series
                 and self._function == other._function)
 
+    def is_undefined(self):
+        """
+        Return ``True`` if ``self`` is an undefined stream.
+        """
+        return self._series.is_undefined()
+
 
 class Stream_shift(Stream):
     """
@@ -2846,6 +2882,11 @@ class Stream_shift(Stream):
         """
         return self._series.is_nonzero()
 
+    def is_undefined(self):
+        """
+        Return ``True`` if ``self`` is an undefined stream.
+        """
+        return self._series.is_undefined()
 
 class Stream_truncated(Stream_inexact):
     """
@@ -3095,6 +3136,12 @@ class Stream_truncated(Stream_inexact):
         start = self._approximate_order - offset
         return any(self._cache[start:])
 
+    def is_undefined(self):
+        """
+        Return ``True`` if ``self`` is an undefined stream.
+        """
+        return self._series.is_undefined()
+
 
 class Stream_derivative(Stream_inexact):
     """
@@ -3222,3 +3269,9 @@ class Stream_derivative(Stream_inexact):
             True
         """
         return self._series.is_nonzero()
+
+    def is_undefined(self):
+        """
+        Return ``True`` if ``self`` is an undefined stream.
+        """
+        return self._series.is_undefined()
