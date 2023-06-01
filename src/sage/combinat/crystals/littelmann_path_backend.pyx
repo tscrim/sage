@@ -22,6 +22,7 @@ AUTHORS:
 #*****************************************************************************
 
 from sage.functions.other import floor
+from sage.structure.richcmp cimport richcmp
 cimport cython
 
 cdef class LittelmannPath(object):
@@ -44,8 +45,8 @@ cdef class LittelmannPath(object):
     def __repr__(self):
         return repr(self.value)
 
-    def __cmp__(self, other):
-        return cmp(self.value, other.value)
+    def __richcmp__(self, other, int op):
+        return richcmp(self.value, (<LittelmannPath> other).value, op)
 
     cpdef copy(self):
         """
