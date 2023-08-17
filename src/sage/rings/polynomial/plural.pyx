@@ -1038,14 +1038,13 @@ cdef class NCPolynomialRing_plural(Ring):
 
         .. WARNING::
 
-           Assumes that the head term of f is a multiple of the head
-           term of g and return the multiplicant m. If this rule is
-           violated, funny things may happen.
+            Assumes that the head term of f is a multiple of the head
+            term of g and return the multiplicant m. If this rule is
+            violated, funny things may happen.
         """
         cdef poly *res
         cdef ring *r = self._ring
         cdef number *n
-        cdef number *denom
 
         if self is not f._parent:
             f = self.coerce(f)
@@ -2524,7 +2523,8 @@ cdef class NCPolynomial_plural(RingElement):
 
         Check if :trac:`7152` is fixed::
 
-            sage: x=var('x')
+            sage: # needs sage.symbolic
+            sage: x = var('x')
             sage: K.<rho> = NumberField(x**2 + 1)
             sage: R.<x,y> = QQ[]
             sage: p = rho*x

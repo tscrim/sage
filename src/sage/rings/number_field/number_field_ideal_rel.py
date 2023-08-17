@@ -134,7 +134,7 @@ class NumberFieldFractionalIdeal_rel(NumberFieldFractionalIdeal):
             self.__pari_rhnf = rnf.rnfidealabstorel(nfzk * L_hnf)
             return self.__pari_rhnf
 
-    def absolute_ideal(self, names = 'a'):
+    def absolute_ideal(self, names='a'):
         r"""
         If this is an ideal in the extension `L/K`, return the ideal with
         the same generators in the absolute field `L/\QQ`.
@@ -738,7 +738,8 @@ class NumberFieldFractionalIdeal_rel(NumberFieldFractionalIdeal):
             sage: K.ideal(2).ramification_index()
             Traceback (most recent call last):
             ...
-            NotImplementedError: For an ideal in a relative number field you must use relative_ramification_index or absolute_ramification_index as appropriate
+            NotImplementedError: For an ideal in a relative number field you must use
+            relative_ramification_index or absolute_ramification_index as appropriate
         """
         raise NotImplementedError("For an ideal in a relative number field you must use relative_ramification_index or absolute_ramification_index as appropriate")
 

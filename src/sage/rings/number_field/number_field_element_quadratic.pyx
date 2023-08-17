@@ -295,9 +295,9 @@ cdef class NumberFieldElement_quadratic(NumberFieldElement_absolute):
         EXAMPLES::
 
             sage: K.<a> = QuadraticField(-1)
-            sage: (1/3 + a/2)._sympy_()                                                 # optional - sympy
+            sage: (1/3 + a/2)._sympy_()                                                 # needs sympy
             1/3 + I/2
-            sage: type(_)                                                               # optional - sympy
+            sage: type(_)                                                               # needs sympy
             <class 'sympy.core.add.Add'>
         """
         a = self.parent().gen()
@@ -506,10 +506,10 @@ cdef class NumberFieldElement_quadratic(NumberFieldElement_absolute):
 
         Verify embeddings are respected::
 
-            sage: cf6c = CyclotomicField(6, embedding=CDF(exp(-pi*I/3))) ; z6c = cf6c.0
-            sage: cf3(z6c)
+            sage: cf6c = CyclotomicField(6, embedding=CDF(exp(-pi*I/3))); z6c = cf6c.0  # needs sage.symbolic
+            sage: cf3(z6c)                                                              # needs sage.symbolic
             -zeta3
-            sage: cf6c(z3)
+            sage: cf6c(z3)                                                              # needs sage.symbolic
             -zeta6
 
         AUTHOR:
@@ -986,9 +986,10 @@ cdef class NumberFieldElement_quadratic(NumberFieldElement_absolute):
             sage: (-a-2).sign()
             -1
 
+            sage: # needs sage.symbolic
             sage: x = polygen(ZZ, 'x')
-            sage: K.<b> = NumberField(x^2 + 2*x + 7, 'b', embedding=CC(-1,-sqrt(6)))    # optional - sage.symbolic
-            sage: b.sign()                                                              # optional - sage.symbolic
+            sage: K.<b> = NumberField(x^2 + 2*x + 7, 'b', embedding=CC(-1,-sqrt(6)))
+            sage: b.sign()
             Traceback (most recent call last):
             ...
             ValueError: a complex number has no sign!
@@ -1822,6 +1823,7 @@ cdef class NumberFieldElement_quadratic(NumberFieldElement_absolute):
             0
             sage: (a + 1/2).real()
             1/2
+            sage: x = polygen(ZZ, 'x')
             sage: K.<a> = NumberField(x^2 + x + 1)
             sage: a.real()
             -1/2
@@ -1865,7 +1867,7 @@ cdef class NumberFieldElement_quadratic(NumberFieldElement_absolute):
             1/2*sqrt3
             sage: a.real()
             -1/2
-            sage: SR(a)                                                                 # optional - sage.symbolic
+            sage: SR(a)                                                                 # needs sage.symbolic
             1/2*I*sqrt(3) - 1/2
             sage: bool(QQbar(I)*QQbar(a.imag()) + QQbar(a.real()) == QQbar(a))
             True
@@ -1938,9 +1940,6 @@ cdef class NumberFieldElement_quadratic(NumberFieldElement_absolute):
             sage: b._coefficients()
             [0, 1]
         """
-        # In terms of the generator...
-        cdef Rational const = <Rational>Rational.__new__(Rational)
-        cdef Rational lin = <Rational>Rational.__new__(Rational)
         if not self:
             return []
         ad, bd = self.parts()
@@ -2217,7 +2216,7 @@ cdef class NumberFieldElement_quadratic(NumberFieldElement_absolute):
 
             sage: x = polygen(ZZ, 'x')
             sage: K.<a> = NumberField(x^2 + 1, embedding=CDF.gen())
-            sage: abs(a+1)
+            sage: abs(a+1)                                                              # needs sage.symbolic
             sqrt(2)
         """
         if mpz_sgn(self.D.value) == 1:
@@ -2334,7 +2333,8 @@ cdef class NumberFieldElement_quadratic(NumberFieldElement_absolute):
 
     def round(self):
         r"""
-        Returns the round (nearest integer).
+        Return the round (nearest integer) of this number field element. In case
+        of ties, this relies on the default rounding for rational numbers.
 
         EXAMPLES::
 
@@ -2356,12 +2356,14 @@ cdef class NumberFieldElement_quadratic(NumberFieldElement_absolute):
             sage: for _ in range(100):
             ....:    a = QQ.random_element(1000,20)
             ....:    b = QQ.random_element(1000,20)
-            ....:    assert round(a) == round(K2(a)), a
-            ....:    assert round(a) == round(K3(a)), a
-            ....:    assert round(a) == round(K5(a)), a
+            ....:    assert a.round() == round(K2(a)), a
+            ....:    assert a.round() == round(K3(a)), a
+            ....:    assert a.round() == round(K5(a)), a
             ....:    assert round(a+b*sqrt(2.)) == round(a+b*sqrt2), (a, b)
             ....:    assert round(a+b*sqrt(3.)) == round(a+b*sqrt3), (a, b)
             ....:    assert round(a+b*sqrt(5.)) == round(a+b*sqrt5), (a, b)
+            doctest...: DeprecationWarning: the default rounding for rationals, currently `away`, will be changed to `even`.
+            See https://github.com/sagemath/sage/issues/35473 for details.
         """
         n = self.floor()
         test = 2 * (self - n).abs()
@@ -2429,8 +2431,6 @@ cdef class NumberFieldElement_quadratic_sqrt(NumberFieldElement_quadratic):
             sage: (3/2*K.one())._coefficients()
             [3/2]
         """
-        # In terms of the generator... Rational const = <Rational>Rational.__new__(Rational)
-        cdef Rational lin = <Rational>Rational.__new__(Rational)
         if not self:
             return []
         cdef tuple parts = self.parts()
@@ -2508,11 +2508,11 @@ cdef class NumberFieldElement_gaussian(NumberFieldElement_quadratic_sqrt):
         r"""
         EXAMPLES::
 
-            sage: SR(1 + 2*i)                                                           # optional - sage.symbolic
+            sage: SR(1 + 2*i)                                                           # needs sage.symbolic
             2*I + 1
 
             sage: K.<mi> = QuadraticField(-1, embedding=CC(0,-1))
-            sage: SR(1 + mi)                                                            # optional - sage.symbolic
+            sage: SR(1 + mi)                                                            # needs sage.symbolic
             -I + 1
         """
         from sage.symbolic.constants import I
@@ -2618,7 +2618,7 @@ cdef class NumberFieldElement_gaussian(NumberFieldElement_quadratic_sqrt):
 
         EXAMPLES::
 
-            sage: I.log()                                                               # optional - sage.symbolic
+            sage: I.log()                                                               # needs sage.symbolic
             1/2*I*pi
         """
         from sage.symbolic.ring import SR
@@ -2852,9 +2852,6 @@ cdef class OrderElement_quadratic(NumberFieldElement_quadratic):
             sage: aa._coefficients()
             [0, 1/3]
         """
-        # In terms of the generator...
-        cdef Rational const = <Rational>Rational.__new__(Rational)
-        cdef Rational lin = <Rational>Rational.__new__(Rational)
         if not self:
             return []
         ad, bd = self.parts()

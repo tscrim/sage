@@ -323,7 +323,7 @@ class NumberField_relative(NumberField_generic):
                                      embedding=embedding, structure=structure)
 
         self._zero_element = self(0)
-        self._one_element =  self(1)
+        self._one_element = self(1)
 
     def change_names(self, names):
         r"""
@@ -884,6 +884,7 @@ class NumberField_relative(NumberField_generic):
 
         Examples from :trac:`4727`::
 
+            sage: # needs sage.symbolic
             sage: K.<j,b> = QQ[sqrt(-1), sqrt(2)]
             sage: j
             I
@@ -912,7 +913,8 @@ class NumberField_relative(NumberField_generic):
             sage: L(L)
             Traceback (most recent call last):
             ...
-            TypeError: unable to convert Number Field in a0 with defining polynomial x^2 + 1 over its base field to Number Field in a0 with defining polynomial x^2 + 1 over its base field
+            TypeError: unable to convert Number Field in a0 with defining polynomial x^2 + 1 over its base field
+            to Number Field in a0 with defining polynomial x^2 + 1 over its base field
             sage: L in L
             False
 
@@ -1672,7 +1674,7 @@ class NumberField_relative(NumberField_generic):
             sage: k.<a> = NumberField(x^2 + 1); k
             Number Field in a with defining polynomial x^2 + 1
             sage: y = polygen(k)
-            sage: m.<b> = k.extension(y^2+3); m
+            sage: m.<b> = k.extension(y^2 + 3); m
             Number Field in b with defining polynomial x^2 + 3 over its base field
             sage: c = m.gen(); c # indirect doctest
             b
@@ -2156,7 +2158,7 @@ class NumberField_relative(NumberField_generic):
         abs_base_gens = [self_into_L(_) for _ in self.base_field().gens()]
         v = sorted([ self.hom([ L_into_self(aa(a)) ]) for aa in aas if all(aa(g) == g for g in abs_base_gens) ])
         put_natural_embedding_first(v)
-        self.__automorphisms = Sequence(v, cr = (v != []), immutable=True,
+        self.__automorphisms = Sequence(v, cr=(v != []), immutable=True,
                                         check=False, universe=self.Hom(self))
         return self.__automorphisms
 
@@ -2455,20 +2457,20 @@ class NumberField_relative(NumberField_generic):
 
         EXAMPLES::
 
-            sage: P.<a,b,c> = QQ[2^(1/2), 2^(1/3), 3^(1/2)]
-            sage: R = P.order([a,b,c]); R
+            sage: P.<a,b,c> = QQ[2^(1/2), 2^(1/3), 3^(1/2)]                             # needs sage.symbolic
+            sage: R = P.order([a,b,c]); R                                               # needs sage.symbolic
             Relative Order in Number Field in sqrt2
              with defining polynomial x^2 - 2 over its base field
 
         The base ring of an order in a relative extension is still `\ZZ`.::
 
-            sage: R.base_ring()
+            sage: R.base_ring()                                                         # needs sage.symbolic
             Integer Ring
 
         One must give enough generators to generate a ring of finite index
         in the maximal order::
 
-            sage: P.order([a, b])
+            sage: P.order([a, b])                                                       # needs sage.symbolic
             Traceback (most recent call last):
             ...
             ValueError: the rank of the span of gens is wrong
@@ -2673,7 +2675,7 @@ class NumberField_relative(NumberField_generic):
         L = K.relativize(beta, names)
         return K.relativize(beta, names, structure=structure.RelativeFromRelative(L))
 
-    def uniformizer(self, P, others = "positive"):
+    def uniformizer(self, P, others="positive"):
         """
         Returns an element of ``self`` with valuation 1 at the prime ideal `P`.
 

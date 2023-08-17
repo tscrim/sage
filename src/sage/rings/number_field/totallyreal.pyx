@@ -256,7 +256,6 @@ def enumerate_totallyreal_fields_prim(n, B, a = [], verbose=0, return_seqs=False
     cdef Py_ssize_t k0, lenS
     cdef tr_data T
     cdef Integer dB
-    cdef double db_odlyzko
 
     if not isinstance(n, Integer):
         try:
@@ -280,7 +279,6 @@ def enumerate_totallyreal_fields_prim(n, B, a = [], verbose=0, return_seqs=False
     t2val = B_pari
     ngt2 = B_pari
     ng = B_pari
-    pari_tmp1 = B_pari
 
     dB = Integer.__new__(Integer)
     dB_odlyzko = odlyzko_bound_totallyreal(n_int)
@@ -294,7 +292,7 @@ def enumerate_totallyreal_fields_prim(n, B, a = [], verbose=0, return_seqs=False
     f_out[n_int] = 1
 
     if keep_fields:
-        if type(keep_fields) == bool:
+        if isinstance(keep_fields, bool):
             keepB = pari(int(math.floor(B*math.log(B))))
         else:
             keepB = pari(keep_fields)
@@ -339,7 +337,7 @@ def enumerate_totallyreal_fields_prim(n, B, a = [], verbose=0, return_seqs=False
     if verbose:
         verb_int = 1
         saveout = sys.stdout
-        if type(verbose) == str:
+        if isinstance(verbose, str):
             fsock = open(verbose, 'w')
             sys.stdout = fsock
         # Else, print to screen
@@ -460,7 +458,7 @@ def enumerate_totallyreal_fields_prim(n, B, a = [], verbose=0, return_seqs=False
         print("Polynomials with nfdisc <= B:", counts[3])
         for i from 0 <= i < lenS:
             print(S[i])
-        if type(verbose) == str:
+        if isinstance(verbose, str):
             fsock.close()
         sys.stdout = saveout
 

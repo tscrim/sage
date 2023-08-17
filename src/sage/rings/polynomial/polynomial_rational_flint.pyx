@@ -491,7 +491,6 @@ cdef class Polynomial_rational_flint(Polynomial):
         """
         cdef Polynomial_rational_flint f
         cdef Rational r
-        cdef mpz_t tmpz
         cdef fmpz_t tmpfz
         cdef fmpq_t tmpfq
         cdef RealBall arb_a, arb_z
@@ -1507,8 +1506,8 @@ cdef class Polynomial_rational_flint(Polynomial):
 
         Check that :trac:`28187` is fixed::
 
-            sage: x = var("x")
-            sage: f._derivative(x)
+            sage: x = var("x")                                                          # needs sage.symbolic
+            sage: f._derivative(x)                                                      # needs sage.symbolic
             4*x^3 - 1
         """
         cdef Polynomial_rational_flint der

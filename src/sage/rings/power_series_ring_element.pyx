@@ -101,7 +101,6 @@ from .infinity import infinity, is_Infinite
 from sage.rings.rational_field import QQ
 
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
-import sage.rings.polynomial.polynomial_element
 import sage.misc.misc
 import sage.arith.all as arith
 import sage.misc.latex
@@ -112,9 +111,6 @@ from sage.categories.fields import Fields
 _Fields = Fields()
 
 from sage.misc.derivative import multi_derivative
-
-Polynomial = sage.rings.polynomial.polynomial_element.Polynomial_generic_dense
-
 from sage.structure.element cimport AlgebraElement, RingElement
 from sage.structure.richcmp cimport richcmp
 
@@ -697,7 +693,7 @@ cdef class PowerSeries(AlgebraElement):
             v = self.list()
             m = len(v)
             first = True
-            for n in xrange(m):
+            for n in range(m):
                 x = v[n]
                 x = repr(x)
                 if x != '0':
@@ -760,7 +756,7 @@ cdef class PowerSeries(AlgebraElement):
         X = self._parent.latex_variable_names()[0]
         atomic_repr = self._parent.base_ring()._repr_option('element_is_atomic')
         first = True
-        for n in xrange(m):
+        for n in range(m):
             x = v[n]
             x = sage.misc.latex.latex(x)
             if x != '0':

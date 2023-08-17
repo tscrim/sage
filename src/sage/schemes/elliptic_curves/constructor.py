@@ -23,7 +23,9 @@ AUTHORS:
 #                  http://www.gnu.org/licenses/
 #*****************************************************************************
 
-import sage.rings.all as rings
+from sage.rings.integer_ring import ZZ
+from sage.rings.rational_field import QQ
+from sage.rings.rational_field import RationalField
 
 import sage.rings.abc
 from sage.rings.polynomial.multi_polynomial_ring import is_MPolynomialRing
@@ -308,7 +310,7 @@ class EllipticCurveFactory(UniqueFactory):
         TypeError: invalid input to EllipticCurve constructor
     """
     def create_key_and_extra_args(self, x=None, y=None, j=None, minimal_twist=True, **kwds):
-        """
+        r"""
         Return a ``UniqueFactory`` key and possibly extra parameters.
 
         INPUT: See the documentation for :class:`EllipticCurveFactory`.
@@ -329,7 +331,7 @@ class EllipticCurveFactory(UniqueFactory):
             sage: EllipticCurve.create_key_and_extra_args(j=8000)
             ((Rational Field, (0, 1, 0, -3, 1)), {})
 
-        When constructing a curve over `\\QQ` from a Cremona or LMFDB
+        When constructing a curve over `\QQ` from a Cremona or LMFDB
         label, the invariants from the database are returned as
         ``extra_args``::
 
@@ -421,7 +423,7 @@ class EllipticCurveFactory(UniqueFactory):
             x = x.lhs() - x.rhs()
 
         if isinstance(parent(x), sage.rings.abc.SymbolicRing):
-            x = x._polynomial_(rings.QQ['x', 'y'])
+            x = x._polynomial_(QQ['x', 'y'])
 
         if isinstance(x, MPolynomial):
             if y is None:
@@ -448,13 +450,13 @@ class EllipticCurveFactory(UniqueFactory):
 
         if R is None:
             R = Sequence(x).universe()
-            if R in (rings.ZZ, int):
-                R = rings.QQ
+            if R in (ZZ, int):
+                R = QQ
 
         return (R, tuple(R(a) for a in x)), kwds
 
     def create_object(self, version, key, **kwds):
-        """
+        r"""
         Create an object from a ``UniqueFactory`` key.
 
         EXAMPLES::
@@ -466,12 +468,12 @@ class EllipticCurveFactory(UniqueFactory):
         .. NOTE::
 
             Keyword arguments are currently only passed to the
-            constructor for elliptic curves over `\\QQ`; elliptic
+            constructor for elliptic curves over `\QQ`; elliptic
             curves over other fields do not support them.
         """
         R, x = key
 
-        if R is rings.QQ:
+        if R is QQ:
             from .ell_rational_field import EllipticCurve_rational_field
             return EllipticCurve_rational_field(x, **kwds)
         elif isinstance(R, NumberField):
@@ -494,7 +496,7 @@ EllipticCurve = EllipticCurveFactory('sage.schemes.elliptic_curves.constructor.E
 
 
 def EllipticCurve_from_Weierstrass_polynomial(f):
-    """
+    r"""
     Return the elliptic curve defined by a cubic in (long) Weierstrass
     form.
 
@@ -534,7 +536,7 @@ def EllipticCurve_from_Weierstrass_polynomial(f):
     return EllipticCurve(coefficients_from_Weierstrass_polynomial(f))
 
 def coefficients_from_Weierstrass_polynomial(f):
-    """
+    r"""
     Return the coefficients `[a_1, a_2, a_3, a_4, a_6]` of a cubic in
     Weierstrass form.
 
@@ -582,7 +584,7 @@ def coefficients_from_Weierstrass_polynomial(f):
 
 
 def EllipticCurve_from_c4c6(c4, c6):
-    """
+    r"""
     Return an elliptic curve with given `c_4` and
     `c_6` invariants.
 
@@ -597,7 +599,7 @@ def EllipticCurve_from_c4c6(c4, c6):
     try:
         K = c4.parent()
     except AttributeError:
-        K = rings.RationalField()
+        K = RationalField()
     if K not in _Fields:
         K = K.fraction_field()
     return EllipticCurve([-K(c4)/K(48), -K(c6)/K(864)])
@@ -664,7 +666,7 @@ def EllipticCurve_from_j(j, minimal_twist=True):
 
 
 def coefficients_from_j(j, minimal_twist=True):
-    """
+    r"""
     Return Weierstrass coefficients `(a_1, a_2, a_3, a_4, a_6)` for an
     elliptic curve with given `j`-invariant.
 
@@ -680,7 +682,7 @@ def coefficients_from_j(j, minimal_twist=True):
         sage: coefficients_from_j(1)
         [1, 0, 0, 36, 3455]
 
-    The ``minimal_twist`` parameter (ignored except over `\\QQ` and
+    The ``minimal_twist`` parameter (ignored except over `\QQ` and
     True by default) controls whether or not a minimal twist is
     computed::
 
@@ -692,7 +694,7 @@ def coefficients_from_j(j, minimal_twist=True):
     try:
         K = j.parent()
     except AttributeError:
-        K = rings.RationalField()
+        K = RationalField()
     if K not in _Fields:
         K = K.fraction_field()
 
@@ -708,7 +710,7 @@ def coefficients_from_j(j, minimal_twist=True):
         else:
             return Sequence([0, j, 0, 0, -j**2], universe=K)
 
-    if K is rings.RationalField():
+    if K is RationalField():
         # we construct the minimal twist, i.e. the curve with minimal
         # conductor with this j_invariant:
         if j == 0:
@@ -1238,7 +1240,7 @@ def EllipticCurve_from_cubic(F, P=None, morphism=True):
 
 
 def tangent_at_smooth_point(C,P):
-    """Return the tangent at the smooth point `P` of projective curve `C`.
+    r"""Return the tangent at the smooth point `P` of projective curve `C`.
 
     INPUT:
 
@@ -1278,7 +1280,7 @@ def tangent_at_smooth_point(C,P):
         return C.tangents(P,factor=False)[0]
 
 def chord_and_tangent(F, P):
-    """Return the third point of intersection of a cubic with the tangent at one point.
+    r"""Return the third point of intersection of a cubic with the tangent at one point.
 
     INPUT:
 
@@ -1352,7 +1354,7 @@ def chord_and_tangent(F, P):
 
 
 def projective_point(p):
-    """
+    r"""
     Return equivalent point with denominators removed
 
     INPUT:
@@ -1384,7 +1386,7 @@ def projective_point(p):
 
 
 def are_projectively_equivalent(P, Q, base_ring):
-    """
+    r"""
     Test whether ``P`` and ``Q`` are projectively equivalent.
 
     INPUT:
@@ -1409,7 +1411,7 @@ def are_projectively_equivalent(P, Q, base_ring):
 
 def EllipticCurves_with_good_reduction_outside_S(S=[], proof=None, verbose=False):
     r"""
-    Return a sorted list of all elliptic curves defined over `Q`
+    Return a sorted list of all elliptic curves defined over `\QQ`
     with good reduction outside the set `S` of primes.
 
     INPUT:
