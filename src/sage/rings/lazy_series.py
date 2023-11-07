@@ -1670,6 +1670,27 @@ class LazyModuleElement(Element):
             sage: g.define_implicity(2+z*g(z^2) - g, [5])
             sage: g
             <repr(...) failed: ValueError: no solution in degree -3 as 5 != 0>
+
+        TESTS:
+
+        We check that no dummy variables can be found outside the implicit
+        definition computation::
+
+            sage: L.<z> = LazyPowerSeriesRing(QQ)
+            sage: f = L.undefined(0)
+            sage: fp = f.derivative()
+            sage: g = L(lambda n: 0 if n < 10 else 1, 0)
+            sage: f.define_implicity(f.derivative() * g + f)
+            sage: f[0]
+            0
+            sage: fp[0]
+            0
+            sage: fp[1]
+            0
+            sage: fp[2]
+            0
+            sage: f[1]
+            0
         """
         if not isinstance(self._coeff_stream, Stream_uninitialized) or self._coeff_stream._target is not None:
             raise ValueError("series already defined")
