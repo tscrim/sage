@@ -1326,7 +1326,7 @@ class TableauTuple(CombinatorialElement):
                 try:
                     return multicharge[l] - r + row.index(k)
                 except ValueError:
-                    ValueError
+                    pass
         raise ValueError('%s must be contained in the tableaux' % k)
 
     def residue(self, k, e, multicharge):
