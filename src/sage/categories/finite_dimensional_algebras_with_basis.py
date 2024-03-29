@@ -212,17 +212,13 @@ class FiniteDimensionalAlgebrasWithBasis(CategoryWithAxiom_over_base_ring):
                 n = self.dimension()
                 B = [b.on_left_matrix() for b in self.basis()]
                 while s <= n:
-                    # we use that p_{AB}(x) = p_{BA}(x) here
-                    data = [[None]*(len(B)+1) for _ in B]
-                    for i, b in enumerate(B):
-                        for j, bb in enumerate(B[i:], start=i):
-                            val = (-1)**s * (b*bb).charpoly()[n-s]
-                            data[i][j] = data[j][i] = val
-                        data[i][-1] = (-1)**s * b.charpoly()[n-s]
-                    C = matrix(data).left_kernel().basis()
+                    BB = B + [I]
+                    G = matrix([[(-1)**s * (b*bb).characteristic_polynomial()[n-s]
+                                 for bb in BB] for b in B])
+                    C = G.left_kernel().basis()
                     if 1 < s < F.order():
                         C = [vector(F, [root_fcn(s, ci) for ci in c]) for c in C]
-                    B = [sum(ci * b for (ci, b) in zip(c, B)) for c in C]
+                    B = [sum(ci*b for (ci,b) in zip(c,B)) for c in C]
                     s = p * s
                 e = vector(self.one())
                 rad_basis = [b * e for b in B]

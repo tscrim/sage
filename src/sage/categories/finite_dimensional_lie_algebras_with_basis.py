@@ -772,7 +772,7 @@ class FiniteDimensionalLieAlgebrasWithBasis(CategoryWithAxiom_over_base_ring):
                 sage: sl3.nilradical_basis()
                 ()
 
-                sage: scoeffs = {('a','e'): {'a':1}, ('b','e'): {'a':1,'b':1},
+                sage: scoeffs = {('a','e'): {'a':1}, ('b','e'): {'a':1, 'b':1},
                 ....:            ('c','d'): {'a':1}, ('c','e'): {'c':1}}
                 sage: L.<a,b,c,d,e> = LieAlgebra(QQ, scoeffs)
                 sage: L.nilradical_basis()
@@ -799,7 +799,7 @@ class FiniteDimensionalLieAlgebrasWithBasis(CategoryWithAxiom_over_base_ring):
 
             We check against the generic algorithm::
 
-                sage: L.<x,y,z> = LieAlgebra(QQ, {('x','z'): {'x':1,'y':1}, ('y','z'): {'y':1}})
+                sage: L.<x,y,z> = LieAlgebra(QQ, {('x','z'): {'x':1, 'y':1}, ('y','z'): {'y':1}})
                 sage: L.nilradical_basis()
                 (x, y)
 
@@ -817,8 +817,7 @@ class FiniteDimensionalLieAlgebrasWithBasis(CategoryWithAxiom_over_base_ring):
 
             A positive characteristic example::
 
-                sage: scoeffs = {('x','z'): {'x':1,'y':1}, ('y','z'): {'y':1}}
-                sage: L.<x,y,z> = LieAlgebra(GF(3), scoeffs)
+                sage: L.<x,y,z> = LieAlgebra(GF(3), {('x','z'): {'x':1, 'y':1}, ('y','z'): {'y':1}})
                 sage: L.nilradical_basis()
                 (x, y)
             """
@@ -974,11 +973,11 @@ class FiniteDimensionalLieAlgebrasWithBasis(CategoryWithAxiom_over_base_ring):
                 Q = self.quotient(R)
                 RQ = Q.nilradical()
                 if not RQ.dimension():  # we did not add anything
-                    return tuple([self(b) for b in R.basis()])
+                    return R
                 new_gens = [Q.lift(b.value) for b in RQ.basis()]
                 R = self.ideal(list(R.basis()) + new_gens)
                 if R.dimension() == dim:
-                    return tuple(self.basis())
+                    return tuple(R.basis())
 
         def solvable_radical(self):
             r"""
