@@ -222,8 +222,8 @@ class LieQuotient_finite_dimensional_with_basis(LieAlgebraWithStructureCoefficie
                 amb_names = dict(zip(sorted_indices, ambient.variable_names()))
                 names = [amb_names[i] for i in index_set]
             except ValueError:  # ambient has not assigned variable names
-                pass
-        elif isinstance(names, str):
+                names = 'e'
+        if isinstance(names, str):
             if len(index_set) == 1:
                 names = [names]
             else:
