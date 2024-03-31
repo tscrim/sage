@@ -388,8 +388,15 @@ class LieSubalgebra_finite_dimensional_with_basis(Parent, UniqueRepresentation):
             sage: S = L.subalgebra([X, Y])
             sage: S._an_element_()
             X
+
+            sage: S = L.subalgebra([])
+            sage: S._an_element_()
+            0
         """
-        return self.lie_algebra_generators()[0]
+        gens = self.lie_algebra_generators()
+        if not gens:
+            return self.zero()
+        return self.element_class(self, gens[0])
 
     def _element_constructor_(self, x):
         """
