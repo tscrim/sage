@@ -1912,6 +1912,7 @@ class FiniteDimensionalLieAlgebrasWithBasis(CategoryWithAxiom_over_base_ring):
             """
             if self.killing_form_matrix().is_singular():
                 raise ValueError("the Lie algebra must have a nondegenerate Killing form")
+
             try:
                 h, A, minpoly = self.splitting_element(return_data=True)
             except ValueError:
@@ -2006,6 +2007,128 @@ class FiniteDimensionalLieAlgebrasWithBasis(CategoryWithAxiom_over_base_ring):
                 if cur_dim == dim:
                     return ret
             return ret
+
+        def weight_basis(self):
+            r"""
+            Return a weight basis of ``self``.
+
+            ALGORITHM:
+
+            Compute the :meth:`primary_decomposition` and then use a basis
+            of the :meth:`cartan_subalgebra` to compute the weights.
+
+            EXAMPLES::
+
+                sage: L = lie_algebras.cross_product(CyclotomicField(4))
+                sage: L.weight_basis()
+                {X: (0), zeta4*Y + Z: (zeta4), -zeta4*Y + Z: (-zeta4)}
+            """
+            PD = self.primary_decomposition()
+            H = [self(b) for b in PD[0].basis()]
+            if any(D.dimension() > 1 for D in PD[1:]):
+                raise ValueError(f"the Cartan subalgebra is not split for {self}")
+            from sage.modules.free_module import FreeModule
+            M = FreeModule(self.base_ring(), len(H))
+            wt_basis = {self(next(iter(D.basis()))): None for D in PD}
+            for r in wt_basis:
+                wt_basis[r] = M([bracket.leading_coefficient() / r.leading_coefficient()
+                                 if (bracket := h.bracket(r)) else 0
+                                 for h in H])
+                wt_basis[r].set_immutable()
+            for h in H:
+                wt_basis[h] = M.zero()
+            return wt_basis
+
+        @cached_method
+        def positive_roots(self):
+            """
+            Return the positive roots of ``self``.
+
+            If the Lie algebra is not semisimple, this raises an error.
+            """
+            wt_basis = self.weight_basis()
+            Phi = set(wt_basis.values())
+
+            # Convert to a good basis of the Cartan subalgebra formed by h_a = [x_a, x_{-a}]
+            wt_to_basis = {wt: b for b, wt in wt_basis().items() if wt}
+            visited = []
+            # We only need to change the basis for the weights from this.
+            # No need to recalculate from the action as in weight_basis().
+            # TODO
+
+            # Cartan integers
+            def cint(alpha, beta):
+                q = 1
+                cur = alpha + beta
+                while cur in Phi:
+                    cur += beta
+                    q += 1
+                r = 1
+                cur = alpha - beta
+                while cur in Phi:
+                    cur -= beta
+                    r += 1
+                return r - q
+
+            pos_roots = set()
+            Phi = list(Phi)
+            for rt in Phi:
+                nrt = -rt
+                nrt.set_immutable()
+                if nrt in pos_roots:  # it is a negative root already found
+                    continue
+                for beta in Phi:
+                    C = cint(rt, beta)
+                    if not C:
+                        continue
+                    if C > 0:
+                        pos_roots.append(rt)
+                    break
+            return frozenset(pos_roots)
+
+        @cached_method
+        def simple_roots(self):
+            r"""
+            Return a set of simple roots of ``self``.
+            """
+            pos_roots = list(self.positive_roots())
+            return tuple([gamma for gamma in pos_roots
+                            if all(alpha + beta != gamma for i, alpha in enumerate(pos_roots)
+                                   for beta in pos_roots[:i])])
+
+        @cached_method
+        def cartan_type(self):
+            r"""
+            Compute the Cartan type of ``self``.
+
+            If the Lie algebra is not semisimple, this returns ``None``.
+            """
+            if self.killing_form_matrix().is_singular():
+                if not self.is_semisimple():
+                    return None
+                raise NotImplementedError("the Killing form currently needs to be nondegenerate")
+
+            pos_roots = self.positive_roots()
+            simple_roots = self.simple_roots()
+            Phi = pos_roots + frozenset([-rt for rt in pos_roots])
+
+            # Cartan integers
+            def cint(alpha, beta):
+                q = 1
+                cur = alpha + beta
+                while cur in Phi:
+                    cur += beta
+                    q += 1
+                r = 1
+                cur = alpha - beta
+                while cur in Phi:
+                    cur -= beta
+                    r += 1
+                return r - q
+
+            CM = CartanMatrix([[cint(alpha, beta) for beta in simple_roots]
+                               for alpha in simple_roots])
+            return CM.cartan_type()
 
         @cached_method(key=_ce_complex_key)
         def chevalley_eilenberg_complex(self, M=None, dual=False, sparse=True, ncpus=None):
