@@ -440,6 +440,13 @@ class FiniteDimensionalAlgebrasWithBasis(CategoryWithAxiom_over_base_ring):
                 sage: A = MS.subalgebra(gens)
                 sage: A.dimension()
                 5
+
+                sage: sl3 = LieAlgebra(GF(3), cartan_type=['A',2])
+                sage: MS = MatrixSpace(sl3.base_ring(), sl3.dimension())
+                sage: gens = [b.adjoint_matrix() for b in sl3.basis()]
+                sage: A = MS.subalgebra(gens)
+                sage: A.dimension()
+                57
             """
             # add the unit to make sure it is unital
             basis = []

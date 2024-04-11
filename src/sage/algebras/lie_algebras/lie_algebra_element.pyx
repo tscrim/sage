@@ -872,7 +872,7 @@ cdef class StructureCoefficientsElement(LieAlgebraMatrixWrapper):
                 yield (I[i], v)
 
     cpdef _vector_(self, bint sparse=False, order=None):
-        """
+        r"""
         Return ``self`` as a vector.
 
         EXAMPLES::
@@ -897,7 +897,7 @@ cdef class StructureCoefficientsElement(LieAlgebraMatrixWrapper):
             sage: a.to_vector()
             (1, 3, -1/2)
         """
-        return self._vector_(sparse=sparse)
+        return self._vector_(sparse=sparse, order=order)
 
     def lift(self):
         """
