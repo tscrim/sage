@@ -437,12 +437,19 @@ class FiniteDimensionalAlgebrasWithBasis(CategoryWithAxiom_over_base_ring):
                 sage: A = MS.subalgebra(gens)
                 sage: A.dimension()
                 5
+
+                sage: sl3 = LieAlgebra(GF(3), cartan_type=['A',2])
+                sage: MS = MatrixSpace(sl3.base_ring(), sl3.dimension())
+                sage: gens = [b.adjoint_matrix() for b in sl3.basis()]
+                sage: A = MS.subalgebra(gens)
+                sage: A.dimension()
+                57
             """
             # add the unit to make sure it is unital
-            basis = []
-            new_elts = [self(g) for g in gens] + [self.one()]
-            while new_elts:
-                basis = self.echelon_form(basis + new_elts)
+            basis = self.echelon_form([self(g) for g in gens] + [self.one()])
+            dim = 0
+            while dim != len(basis):
+                dim = len(basis)
                 leadsupp = {b.leading_support(): b for b in basis}
                 sortsupp = sorted(leadsupp)
                 new_elts = []
@@ -456,6 +463,7 @@ class FiniteDimensionalAlgebrasWithBasis(CategoryWithAxiom_over_base_ring):
                                 elt -= c * leadsupp[s]
                         if elt:
                             new_elts.append(elt)
+                basis = self.echelon_form(basis + new_elts)
             C = FiniteDimensionalAlgebrasWithBasis(self.category().base_ring())
             category = C.Subobjects().or_subcategory(category)
             return self.submodule(basis, check=False, already_echelonized=True,

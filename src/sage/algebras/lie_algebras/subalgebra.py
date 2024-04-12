@@ -396,7 +396,7 @@ class LieSubalgebra_finite_dimensional_with_basis(Parent, UniqueRepresentation):
         gens = self.lie_algebra_generators()
         if not gens:
             return self.zero()
-        return self.element_class(self, gens[0])
+        return next(iter(gens))
 
     def _element_constructor_(self, x):
         """
