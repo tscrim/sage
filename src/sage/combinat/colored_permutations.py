@@ -15,10 +15,15 @@ from sage.structure.unique_representation import UniqueRepresentation
 from sage.misc.inherit_comparison import InheritComparisonClasscallMetaclass
 from sage.misc.cachefunc import cached_method
 from sage.misc.misc_c import prod
+from sage.misc.lazy_attribute import lazy_attribute
 from sage.arith.functions import lcm
 
 from sage.combinat.permutation import Permutations
-from sage.matrix.constructor import diagonal_matrix
+from sage.combinat.free_module import CombinatorialFreeModule
+from sage.combinat.specht_module import SpechtModule as SymGroupSpechtModule
+from sage.modules.with_basis.subquotient import SubmoduleWithBasis, QuotientModuleWithBasis
+from sage.modules.with_basis.representation import Representation_abstract
+from sage.matrix.constructor import matrix, diagonal_matrix
 from sage.rings.finite_rings.integer_mod_ring import IntegerModRing
 from sage.rings.number_field.number_field import CyclotomicField
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
@@ -1560,6 +1565,15 @@ class SignedPermutations(ColoredPermutations):
                                                 x._perm)
         return super()._coerce_map_from_(C)
 
+    def tabloid_module(self, shape, base_ring):
+        return TabloidModule(self, base_ring, shape)
+
+    def specht_module(self, shape, base_ring):
+        return self.tabloid_module(shape, base_ring).specht_module()
+
+    def simple_module(self, shape, base_ring):
+        return self.specht_module(shape, base_ring).simple_module()
+
     def long_element(self, index_set=None):
         """
         Return the longest element of ``self``, or of the
@@ -1679,3 +1693,785 @@ class SignedPermutations(ColoredPermutations):
 #
 #            if total % 2 == 0:
 #                yield s
+
+# ===================================================================
+# Representation theory
+
+
+class TabloidModule(Representation_abstract, CombinatorialFreeModule):
+    r"""
+    The vector space of all tabloids of a fixed shape with the natural
+    signed permutation group action.
+
+    A *tabloid* of size `n` is a pair of squences sets `(S, T)` such that:
+
+    - For all `X, Y \in S \cup T`, we have `X \cap Y = \emptyset`
+      (all sets are pairwise disjoint).
+    - `\sum_{X \in S \cup T} |X| = n`.
+    - `\bigsqcup_{X\subseteq S \cup T} X \sqcup \overline{X} = \{1, \ldots,
+      n, \overline{1} \ldots, \overline{n}\}`.
+
+    The signed permutation group acts naturally on the entries of each set.
+    Hence, this is a representation of the signed permutation group
+    defined over any field.
+
+    EXAMPLES::
+
+        sage: SP5 = SignedPermutations(5)
+        sage: TM = SP5.tabloid_module(GF(3), [[2, 1], [2]])
+        sage: TM.dimension()
+        30
+        sage: TM.brauer_character()
+        (30, 6, 2, 0, 0)
+        sage: IM = TM.invariant_module()
+        sage: IM.dimension()
+        1
+        sage: IM.basis()[0].lift() == sum(TM.basis())
+        True
+
+    We verify the dimension is `2^{|\lambda|} \frac{n!}{
+    \lambda_1! \cdots \lambda_{\ell}! \mu_1! \cdots \mu_m!}`::
+
+    REFERENCES:
+
+    - [Morris1981]_
+    """
+    @staticmethod
+    def __classcall_private__(cls, G, base_ring, shape):
+        r"""
+        Normalize input to ensure a unique representation.
+
+        EXAMPLES::
+
+            sage: from sage.combinat.specht_module import TabloidModule
+            sage: SGA = SymmetricGroupAlgebra(QQ, 5)
+            sage: TM1 = TabloidModule(SGA, [2, 2, 1])
+            sage: TM2 = TabloidModule(SGA, Partition([2, 2, 1]))
+            sage: TM1 is TM2
+            True
+
+            sage: TabloidModule(SGA, [3, 2, 1])
+            Traceback (most recent call last):
+            ...
+            ValueError: the domain size (=5) does not match the number of boxes (=6) of the diagram
+        """
+        from sage.combinat.partition_tuple import PartitionTuples
+        shape = PartitionTuples(2, G._n)(shape)
+        return super().__classcall__(cls, G, base_ring, shape)
+
+    def __init__(self, G, base_ring, shape):
+        r"""
+        Initialize ``self``.
+
+        EXAMPLES::
+
+            sage: SGA = SymmetricGroupAlgebra(QQ, 5)
+            sage: TM = SGA.tabloid_module([2,2,1])
+            sage: TestSuite(TM).run()
+        """
+        self._shape = shape
+        from sage.categories.modules_with_basis import ModulesWithBasis
+        cat = ModulesWithBasis(base_ring).FiniteDimensional()
+
+        # Build the tabloids
+        from sage.sets.disjoint_union_enumerated_sets import DisjointUnionEnumeratedSets
+        from sage.combinat.set_partition_ordered import OrderedSetPartitions
+        from sage.categories.sets_cat import cartesian_product
+        from itertools import product
+        la, mu = self._shape
+        data = [cartesian_product([OrderedSetPartitions([val * x for x, val in zip(sorted(X), signs)], la),
+                                   OrderedSetPartitions(sorted(Y), mu)])
+                for (X, Y) in OrderedSetPartitions(G._n, [sum(la), sum(mu)])
+                for signs in product([1,-1], repeat=sum(la))]
+        tabloids = DisjointUnionEnumeratedSets(data)
+        tabloids.rename(f"Tabloids of shape {self._shape}")
+
+        Representation_abstract.__init__(self, G, base_ring, "left", tabloids,
+                                         category=cat, prefix='T', bracket='')
+
+    def _repr_(self):
+        r"""
+        Return a string representation of ``self``.
+
+        EXAMPLES::
+
+            sage: SGA = SymmetricGroupAlgebra(QQ, 5)
+            sage: SGA.tabloid_module([2,2,1])
+            Tabloid module of [2, 2, 1] over Rational Field
+        """
+        return f"Tabloid module of {self._shape} over {self.base_ring()}"
+
+    def _latex_(self):
+        r"""
+        Return a latex representation of ``self``.
+
+        EXAMPLES::
+
+            sage: B4 = SignedPermutations(4)
+            sage: TM = B4.tabloid_module([[2,1],[1]], GF(3))
+            sage: latex(TM)
+            T^{{\def\lr#1{\multicolumn{1}{|@{\hspace{.6ex}}c@{\hspace{.6ex}}|}{\raisebox{-.3ex}{$#1$}}}
+            \raisebox{-.6ex}{$\begin{array}[b]{*{2}c}\cline{1-2}
+            \lr{\phantom{x}}&\lr{\phantom{x}}\\\cline{1-2}
+            \lr{\phantom{x}}\\\cline{1-1}
+            \end{array}$}
+            },{\def\lr#1{\multicolumn{1}{|@{\hspace{.6ex}}c@{\hspace{.6ex}}|}{\raisebox{-.3ex}{$#1$}}}
+            \raisebox{-.6ex}{$\begin{array}[b]{*{1}c}\cline{1-1}
+            \lr{\phantom{x}}\\\cline{1-1}
+            \end{array}$}
+            }}
+        """
+        from sage.misc.latex import latex
+        return "T^{" + ",".join(latex(la) for la in self._shape) + "}"
+
+    def _ascii_art_term(self, TP):
+        r"""
+        Return an ascii art representation of the term indexed by ``T``.
+
+        EXAMPLES::
+
+            sage: SGA = SymmetricGroupAlgebra(QQ, 5)
+            sage: TM = SGA.tabloid_module([2,2,1])
+            sage: ascii_art(TM.an_element())  # indirect doctest
+            2*T       + 2*T       + 3*T
+               {1, 2}      {1, 2}      {1, 2}
+               {3, 4}      {3, 5}      {4, 5}
+               {5}         {4}         {3}
+        """
+        # This is basically copied from CombinatorialFreeModule._ascii_art_term
+        from sage.typeset.ascii_art import AsciiArt, ascii_art
+        pref = AsciiArt([self.prefix()])
+        data = []
+        for T in TP:
+            tab = "\n".join("{" + ", ".join(str(val) for val in sorted(row)) + "}" for row in T)
+            if not tab:
+                tab = '-'
+            data.append(tab)
+        r = pref * (AsciiArt([" " * len(pref)]) + ascii_art(data[0]) + ascii_art(', ') + ascii_art(data[1]))
+        r._baseline = r._h - 1
+        return r
+
+    def _unicode_art_term(self, T):
+        r"""
+        Return a unicode art representation of the term indexed by ``T``.
+
+        EXAMPLES::
+
+            sage: SGA = SymmetricGroupAlgebra(QQ, 5)
+            sage: TM = SGA.tabloid_module([2,2,1])
+            sage: unicode_art(TM.an_element())  # indirect doctest
+            2*T       + 2*T       + 3*T
+               {1, 2}      {1, 2}      {1, 2}
+               {3, 4}      {3, 5}      {4, 5}
+               {5}         {4}         {3}
+        """
+        from sage.typeset.unicode_art import unicode_art
+        r = unicode_art(repr(self._ascii_art_term(T)))
+        r._baseline = r._h - 1
+        return r
+
+    def _latex_term(self, TP):
+        r"""
+        Return a latex representation of the term indexed by ``T``.
+
+        EXAMPLES::
+
+            sage: SGA = SymmetricGroupAlgebra(QQ, 5)
+            sage: TM = SGA.tabloid_module([2,2,1])
+            sage: latex(TM.an_element())  # indirect doctest
+            2 T_{{\def\lr#1{\multicolumn{1}{@{\hspace{.6ex}}c@{\hspace{.6ex}}}{\raisebox{-.3ex}{$#1$}}}
+            \raisebox{-.6ex}{$\begin{array}[b]{*{2}c}\cline{1-2}
+            \lr{1}&\lr{2}\\\cline{1-2}
+            \lr{3}&\lr{4}\\\cline{1-2}
+            \lr{5}\\\cline{1-1}
+            \end{array}$}
+            }} + 2 T_{{\def\lr#1{\multicolumn{1}{@{\hspace{.6ex}}c@{\hspace{.6ex}}}{\raisebox{-.3ex}{$#1$}}}
+            \raisebox{-.6ex}{$\begin{array}[b]{*{2}c}\cline{1-2}
+            \lr{1}&\lr{2}\\\cline{1-2}
+            \lr{3}&\lr{5}\\\cline{1-2}
+            \lr{4}\\\cline{1-1}
+            \end{array}$}
+            }} + 3 T_{{\def\lr#1{\multicolumn{1}{@{\hspace{.6ex}}c@{\hspace{.6ex}}}{\raisebox{-.3ex}{$#1$}}}
+            \raisebox{-.6ex}{$\begin{array}[b]{*{2}c}\cline{1-2}
+            \lr{1}&\lr{2}\\\cline{1-2}
+            \lr{4}&\lr{5}\\\cline{1-2}
+            \lr{3}\\\cline{1-1}
+            \end{array}$}
+            }}
+        """
+        data = []
+        import re
+        for T in TP:
+            if not T:
+                tab = "\\emptyset"
+            else:
+                from sage.combinat.output import tex_from_array
+                A = list(map(sorted, T))
+                tab = str(tex_from_array(A))
+                tab = tab.replace("|", "")
+                # Replace -i with \overline{i} in boxes
+                tab = re.sub(r"\\lr{-([0-9]+)}", r"\\lr{\\overline{\1}}", tab)
+            data.append(tab)
+        return f"{self.prefix()}_{{{data[0]}, {data[1]}}}"
+
+    def _semigroup_basis_action(self, g, T):
+        P = self._indices
+        #g = self._semigroup(g)
+        U = [[g(val) for val in row] for row in T[0]]
+        V = [[abs(g(val)) for val in row] for row in T[1]]
+        return P([U, V])
+
+    def _semigroup_action(self, g, vec, vec_on_left):
+        r"""
+        Return the action of the symmetric group element ``g`` on the
+        ordered set partition ``osp``.
+
+        EXAMPLES::
+
+            sage: SGA = SymmetricGroupAlgebra(QQ, 5)
+            sage: TM = SGA.tabloid_module([2,2,1])
+            sage: osp = TM._indices([[1,4],[3,5],[2]])
+            sage: g = SGA.group().an_element(); g
+            [5, 1, 2, 3, 4]
+            sage: TM._symmetric_group_action(osp, g)
+            [{3, 5}, {2, 4}, {1}]
+        """
+        if self._left_repr == vec_on_left:
+            g = ~g
+        return self.sum_of_terms((self._semigroup_basis_action(g, T), c)
+                                 for T, c in vec._monomial_coefficients.items())
+
+    def specht_module(self):
+        r"""
+        Return the Specht submodule of ``self``.
+
+        EXAMPLES::
+
+            sage: SGA = SymmetricGroupAlgebra(QQ, 5)
+            sage: TM = SGA.tabloid_module([2,2,1])
+            sage: TM.specht_module() is SGA.specht_module([2,2,1])
+            True
+        """
+        return SpechtModule(self)
+
+    def bilinear_form(self, u, v):
+        r"""
+        Return the natural bilinear form of ``self`` applied to ``u`` and ``v``.
+
+        The natural bilinear form is given by defining the tabloid basis
+        to be orthonormal.
+
+        EXAMPLES::
+
+            sage: SGA = SymmetricGroupAlgebra(QQ, 5)
+            sage: TM = SGA.tabloid_module([2,2,1])
+            sage: u = TM.an_element(); u
+            2*T[{1, 2}, {3, 4}, {5}] + 2*T[{1, 2}, {3, 5}, {4}] + 3*T[{1, 2}, {4, 5}, {3}]
+            sage: v = sum(TM.basis())
+            sage: TM.bilinear_form(u, v)
+            7
+            sage: TM.bilinear_form(u, TM.zero())
+            0
+        """
+        if len(v) < len(u):
+            u, v = v, u
+        R = self.base_ring()
+        return R.sum(c * v[T] for T, c in u)
+
+
+class SpechtModule(Representation_abstract, SubmoduleWithBasis):
+    r"""
+    A Specht module of a type `B_n` Coxeter group in the classical standard
+    tableau pair basis.
+
+    This is constructed as a `B_n`-submodule of the :class:`TabloidModule`
+    (also referred to as the standard module) using the polytabloid elements
+    associated to the standard tableaux of shape `(\lambda, \mu)`.
+
+    We verify the set of 2-regular partitions for `n = 4`::
+
+        sage: for la in PartitionTuples(2, 4):
+        ....:     SM = B4.specht_module(la, GF(3))
+        ....:     if SM.gram_matrix():
+        ....:         print(la)
+        ([4], [])
+        ([3, 1], [])
+        ([2, 2], [])
+        ([2, 1, 1], [])
+        ([3], [1])
+        ([2, 1], [1])
+        ([2], [2])
+        ([2], [1, 1])
+        ([1, 1], [2])
+        ([1, 1], [1, 1])
+        ([1], [3])
+        ([1], [2, 1])
+        ([], [4])
+        ([], [3, 1])
+        ([], [2, 2])
+        ([], [2, 1, 1])
+        sage: for la in PartitionTuples(2, 4):
+        ....:     SM = B4.specht_module(la, GF(2))
+        ....:     if SM.gram_matrix():
+        ....:         print(la)
+        ([], [4])
+        ([], [3, 1])
+
+    REFERENCES:
+
+    - [Morris1981]_
+    """
+    def __init__(self, ambient):
+        r"""
+        Initialize ``self``.
+
+        EXAMPLES::
+
+            sage: SGA = SymmetricGroupAlgebra(QQ, 5)
+            sage: SM = SGA.specht_module([2,2,1])
+            sage: TestSuite(SM).run()
+        """
+        self._diagram = ambient._shape
+        self._semigroup = ambient._semigroup
+        self._semigroup_algebra = ambient._semigroup_algebra
+        self._side = ambient._side
+        self._left_repr = ambient._left_repr
+        self._right_repr = ambient._right_repr
+
+        ambient_basis = ambient.basis()
+        tabloids = ambient_basis.keys()
+        support_order = list(tabloids)
+        from itertools import product
+
+        def elt(T):
+            tab = tabloids(list(T))
+
+            def group_elements(sigma):
+                mu_vals = set(sum((row for row in T[1]), ()))
+                n = T.size()
+                for sigma in T.column_stabilizer():
+                    sigma = sigma.tuple()
+                    for signs in product(*[[1,-1] if i not in mu_vals else [1]
+                                           for i in range(1,n+1)]):
+                        yield self._semigroup([s * val for s, val in zip(signs, sigma)])
+
+            return ambient.sum_of_terms((ambient._semigroup_basis_action(elt, tab),
+                                         1 - 2*(elt.length() % 2))  # == (-1)**elt.length()
+                                        for elt in group_elements(T))
+
+        from sage.sets.family import Family
+        basis = Family({T: elt(T)
+                        for T in self._diagram.standard_tableaux()})
+        cat = ambient.category().Subobjects()
+        SubmoduleWithBasis.__init__(self, basis, support_order, ambient=ambient,
+                                    unitriangular=False, category=cat,
+                                    prefix='S', bracket='')
+
+    def _repr_(self):
+        return "Specht module of shape {} over {}".format(self._diagram, self.base_ring())
+
+    def _latex_(self):
+        r"""
+        Return a latex representation of ``self``.
+
+        EXAMPLES::
+
+            sage: B4 = SignedPermutations(4)
+            sage: latex(B4.specht_module([[2,1],[1]], GF(3)))
+            S^{{\def\lr#1{\multicolumn{1}{|@{\hspace{.6ex}}c@{\hspace{.6ex}}|}{\raisebox{-.3ex}{$#1$}}}
+            \raisebox{-.6ex}{$\begin{array}[b]{*{2}c}\cline{1-2}
+            \lr{\phantom{x}}&\lr{\phantom{x}}\\\cline{1-2}
+            \lr{\phantom{x}}\\\cline{1-1}
+            \end{array}$}
+            },{\def\lr#1{\multicolumn{1}{|@{\hspace{.6ex}}c@{\hspace{.6ex}}|}{\raisebox{-.3ex}{$#1$}}}
+            \raisebox{-.6ex}{$\begin{array}[b]{*{1}c}\cline{1-1}
+            \lr{\phantom{x}}\\\cline{1-1}
+            \end{array}$}
+            }}
+        """
+        from sage.misc.latex import latex
+        return "S^{" + ",".join(latex(la) for la in self._shape) + "}"
+
+    @lazy_attribute
+    def lift(self):
+        r"""
+        The lift (embedding) map from ``self`` to the ambient space.
+
+        EXAMPLES::
+
+            sage: SGA = SymmetricGroupAlgebra(QQ, 5)
+            sage: SM = SGA.specht_module([3, 1, 1])
+            sage: SM.lift
+            Generic morphism:
+              From: Specht module of [3, 1, 1] over Rational Field
+              To:   Tabloid module of [3, 1, 1] over Rational Field
+        """
+        return self.module_morphism(self.lift_on_basis, codomain=self.ambient())
+
+    @lazy_attribute
+    def retract(self):
+        r"""
+        The retract map from the ambient space.
+
+        EXAMPLES::
+
+            sage: SGA = SymmetricGroupAlgebra(QQ, 5)
+            sage: X = SGA.tabloid_module([2,2,1])
+            sage: Y = X.specht_module()
+            sage: Y.retract
+            Generic morphism:
+              From: Tabloid module of [2, 2, 1] over Rational Field
+              To:   Specht module of [2, 2, 1] over Rational Field
+            sage: all(Y.retract(u.lift()) == u for u in Y.basis())
+            True
+
+            sage: Y.retract(X.zero())
+            0
+            sage: Y.retract(sum(X.basis()))
+            Traceback (most recent call last):
+            ...
+            ValueError: ... is not in the image
+        """
+        B = self.basis()
+        COB = matrix([b.lift().to_vector() for b in B]).T
+        P, L, U = COB.LU()
+        # Since U is upper triangular, the nonzero entriesm must be in the
+        #   upper square portiion of the matrix
+        n = len(B)
+
+        Uinv = U.matrix_from_rows(range(n)).inverse()
+        # This is a slight abuse as the codomain should be a module with a different
+        #    S_n action, but we only use it internally, so there isn't any problems
+        PLinv = (P*L).inverse()
+
+        def retraction(elt):
+            vec = PLinv * elt.to_vector(order=self._support_order)
+            if not vec:
+                return self.zero()
+            # vec is now in the image of self under U, which is
+            if max(vec.support()) >= n:
+                raise ValueError(f"{elt} is not in the image")
+            return self._from_dict(dict(zip(B.keys(), Uinv * vec[:n])))
+
+        return self._ambient.module_morphism(function=retraction, codomain=self)
+
+    def bilinear_form(self, u, v):
+        r"""
+        Return the natural bilinear form of ``self`` applied to ``u`` and ``v``.
+
+        The natural bilinear form is given by the pullback of the natural
+        bilinear form on the tabloid module (where the tabloid basis is an
+        orthonormal basis).
+
+        EXAMPLES::
+
+            sage: SGA = SymmetricGroupAlgebra(QQ, 5)
+            sage: SM = SGA.specht_module([2,2,1])
+            sage: u = SM.an_element(); u
+            3*S[[1, 2], [3, 5], [4]] + 2*S[[1, 3], [2, 5], [4]] + 2*S[[1, 4], [2, 5], [3]]
+            sage: v = sum(SM.basis())
+            sage: SM.bilinear_form(u, v)
+            140
+        """
+        TM = self._ambient
+        return TM.bilinear_form(u.lift(), v.lift())
+
+    @cached_method
+    def gram_matrix(self):
+        r"""
+        Return the Gram matrix of the natural bilinear form of ``self``.
+
+        EXAMPLES::
+
+            sage: SGA = SymmetricGroupAlgebra(QQ, 5)
+            sage: SM = SGA.specht_module([2,2,1])
+            sage: M = SM.gram_matrix(); M
+            [12  4 -4 -4  4]
+            [ 4 12  4  4  4]
+            [-4  4 12  4  4]
+            [-4  4  4 12  4]
+            [ 4  4  4  4 12]
+            sage: M.det() != 0
+            True
+        """
+        B = self.basis()
+        M = matrix([[self.bilinear_form(b, bp) for bp in B] for b in B])
+        M.set_immutable()
+        return M
+
+    def maximal_submodule(self):
+        """
+        Return the maximal submodule of ``self``.
+
+        EXAMPLES::
+
+            sage: SGA = SymmetricGroupAlgebra(GF(3), 5)
+            sage: SM = SGA.specht_module([3,2])
+            sage: U = SM.maximal_submodule()
+            sage: U.dimension()
+            4
+        """
+        return MaximalSpechtSubmodule(self)
+
+    def simple_module(self):
+        r"""
+        Return the simple (or irreducible) `S_n`-submodule of ``self``.
+
+        .. SEEALSO::
+
+            :class:`~sage.combinat.specht_module.SimpleModule`
+
+        EXAMPLES::
+
+            sage: SGA = SymmetricGroupAlgebra(GF(3), 5)
+            sage: SM = SGA.specht_module([3,2])
+            sage: L = SM.simple_module()
+            sage: L.dimension()
+            1
+
+            sage: SGA = SymmetricGroupAlgebra(QQ, 5)
+            sage: SM = SGA.specht_module([3,2])
+            sage: SM.simple_module() is SM
+            True
+        """
+        if self.base_ring().characteristic() == 0:
+            return self
+        return SimpleModule(self)
+
+    Element = SymGroupSpechtModule.Element
+
+
+class MaximalSpechtSubmodule(Representation_abstract, SubmoduleWithBasis):
+    r"""
+    The maximal submodule `U^{\lambda, \mu}` of the type `B_n` Specht
+    module `S^{\lambda, \mu}`.
+
+    ALGORITHM:
+
+    We construct `U^{(\lambda,\mu)}` as the intersection `S \cap S^{\perp}`,
+    where `S^{\perp}` is the orthogonal complement of the Specht module `S`
+    inside of the tabloid module `T` (with respect to the natural
+    bilinear form on `T`).
+
+    EXAMPLES::
+
+        sage: SGA = SymmetricGroupAlgebra(GF(3), 5)
+        sage: SM = SGA.specht_module([3,2])
+        sage: U = SM.maximal_submodule()
+        sage: u = U.an_element(); u
+        2*U[0] + 2*U[1]
+        sage: [p * u for p in list(SGA.basis())[:4]]
+        [2*U[0] + 2*U[1], 2*U[2] + 2*U[3], 2*U[0] + 2*U[1], U[0] + 2*U[2]]
+        sage: sum(SGA.basis()) * u
+        0
+    """
+    def __init__(self, specht_module):
+        r"""
+        Initialize ``self``.
+
+        EXAMPLES::
+
+            sage: SGA = SymmetricGroupAlgebra(GF(3), 5)
+            sage: SM = SGA.specht_module([3,2])
+            sage: U = SM.maximal_submodule()
+            sage: TestSuite(U).run()
+
+            sage: SM = SGA.specht_module([2,1,1,1])
+            sage: SM.maximal_submodule()
+            Traceback (most recent call last):
+            ...
+            NotImplementedError: only implemented for 3-regular partitions
+
+            sage: SGA = SymmetricGroupAlgebra(QQ, 5)
+            sage: SM = SGA.specht_module([3,2])
+            sage: U = SM.maximal_submodule()
+            sage: TestSuite(U).run()
+            sage: U.dimension()
+            0
+        """
+        self._semigroup = specht_module._semigroup
+        self._semigroup_algebra = specht_module._semigroup_algebra
+        self._side = specht_module._side
+        self._left_repr = specht_module._left_repr
+        self._right_repr = specht_module._right_repr
+
+        from sage.sets.family import Family
+        p = specht_module.base_ring().characteristic()
+        if p == 0:
+            basis = Family([])
+        else:
+            TM = specht_module._ambient
+            if not all(la.is_regular(p) for la in TM._shape) or (p == 2 and TM._shape[0]):
+                basis = specht_module.basis()
+            else:
+                TV = TM._dense_free_module()
+                SV = TV.submodule(specht_module.lift.matrix().columns())
+                basis = (SV & SV.complement()).basis()
+                basis = [specht_module.retract(TM.from_vector(b)) for b in basis]
+                basis = Family(specht_module.echelon_form(basis))
+
+        unitriangular = all(b.leading_support() == 1 for b in basis)
+        support_order = list(specht_module.basis().keys())
+        cat = specht_module.category().Subobjects()
+        SubmoduleWithBasis.__init__(self, basis, support_order, ambient=specht_module,
+                                    unitriangular=unitriangular, category=cat,
+                                    prefix='U')
+
+    def _repr_(self):
+        r"""
+        Return a string representation of ``self``.
+
+        EXAMPLES::
+
+            sage: SGA = SymmetricGroupAlgebra(GF(3), 5)
+            sage: SM = SGA.specht_module([3,2])
+            sage: SM.maximal_submodule()
+            Maximal submodule of Specht module of [3, 2] over Finite Field of size 3
+        """
+        return f"Maximal submodule of {self._ambient}"
+
+    def _latex_(self):
+        r"""
+        Return a latex representation of ``self``.
+
+        EXAMPLES::
+
+            sage: B4 = SignedPermutations(4)
+            sage: latex(B4.specht_module([[2,1],[1]], GF(3)).maximal_submodule())
+            U^{{\def\lr#1{\multicolumn{1}{|@{\hspace{.6ex}}c@{\hspace{.6ex}}|}{\raisebox{-.3ex}{$#1$}}}
+            \raisebox{-.6ex}{$\begin{array}[b]{*{2}c}\cline{1-2}
+            \lr{\phantom{x}}&\lr{\phantom{x}}\\\cline{1-2}
+            \lr{\phantom{x}}\\\cline{1-1}
+            \end{array}$}
+            },{\def\lr#1{\multicolumn{1}{|@{\hspace{.6ex}}c@{\hspace{.6ex}}|}{\raisebox{-.3ex}{$#1$}}}
+            \raisebox{-.6ex}{$\begin{array}[b]{*{1}c}\cline{1-1}
+            \lr{\phantom{x}}\\\cline{1-1}
+            \end{array}$}
+            }}
+        """
+        from sage.misc.latex import latex
+        return "U^{" + ",".join(latex(la) for la in self._shape) + "}"
+
+    Element = SymGroupSpechtModule.Element
+
+
+class SimpleModule(Representation_abstract, QuotientModuleWithBasis):
+    r"""
+    The simple `B_n`-module associated with a partition pair `(\lambda, \mu)`.
+
+    The simple module `D^{\lambda, \mu}` is the quotient of the
+    Specht module `S^{\lambda, \mu}` by its
+    :class:`maximal submodule <MaximalSpechtSubmodule>` `U^{\lambda, \mu}`.
+
+    For `p \neq 2`, a partition pair `(\lambda, \mu)` is `p`-*regular*
+    if `\lambda` and `\mu` are `p`-regular partitions. It is `2`-regular
+    if `\lambda = \emptyset` and `\mu` is `2`-regular.
+
+    EXAMPLES::
+
+        sage: SGA = SymmetricGroupAlgebra(GF(3), 5)
+        sage: SM = SGA.specht_module([3,1,1])
+        sage: D = SM.simple_module()
+        sage: v = D.an_element(); v
+        2*D[[[1, 3, 5], [2], [4]]] + 2*D[[[1, 4, 5], [2], [3]]]
+        sage: SGA.an_element() * v
+        2*D[[[1, 2, 4], [3], [5]]] + 2*D[[[1, 3, 5], [2], [4]]]
+
+    We give an example on how to construct the decomposition matrix
+    (the Specht modules are a complete set of irreducible projective
+    modules) and the Cartan matrix of a symmetric group algebra::
+
+        sage: SGA = SymmetricGroupAlgebra(GF(3), 4)
+        sage: BM = matrix(SGA.simple_module(la).brauer_character()
+        ....:             for la in Partitions(4, regular=3))
+        sage: SBT = matrix(SGA.specht_module(la).brauer_character()
+        ....:              for la in Partitions(4))
+        sage: D = SBT * ~BM; D
+        [1 0 0 0]
+        [0 1 0 0]
+        [1 0 1 0]
+        [0 0 0 1]
+        [0 0 1 0]
+        sage: D.transpose() * D
+        [2 0 1 0]
+        [0 1 0 0]
+        [1 0 2 0]
+        [0 0 0 1]
+
+    We verify this against the direct computation (up to reindexing the
+    rows and columns)::
+
+        sage: SGA.cartan_invariants_matrix()  # long time
+        [1 0 0 0]
+        [0 1 0 0]
+        [0 0 2 1]
+        [0 0 1 2]
+    """
+    def __init__(self, specht_module):
+        r"""
+        Initialize ``self``.
+
+        EXAMPLES::
+
+            sage: B4 = SignedPermutations(4)
+            sage: TM = B4.tabloid_module([[2,1],[1]], GF(3))
+            sage: SM = TM.specht_module()
+            sage: SM.dimension()
+            8
+            sage: SM.maximal_submodule().dimension()
+            4
+            sage: D = SM.simple_module()
+            sage: D
+            Simple module of ([2, 1], [1]) over Finite Field of size 3
+            sage: D.dimension()
+            4
+        """
+        self._diagram = specht_module._diagram
+        p = specht_module.base_ring().characteristic()
+        if (not all(la.is_regular(p) for la in specht_module._diagram)
+            or (p == 2 and specht_module._diagram[0])):
+            raise ValueError(f"the partition must be {p}-regular")
+        self._semigroup = specht_module._semigroup
+        self._semigroup_algebra = specht_module._semigroup_algebra
+        self._side = specht_module._side
+        self._left_repr = specht_module._left_repr
+        self._right_repr = specht_module._right_repr
+        cat = specht_module.category()
+        QuotientModuleWithBasis.__init__(self, specht_module.maximal_submodule(), cat, prefix='D')
+
+    def _repr_(self):
+        r"""
+        Return a string representation of ``self``.
+
+        EXAMPLES::
+
+            sage: SGA = SymmetricGroupAlgebra(GF(3), 5)
+            sage: SM = SGA.specht_module([3,1,1])
+            sage: SM.simple_module()
+            Simple module of [3, 1, 1] over Finite Field of size 3
+        """
+        return f"Simple module of {self._diagram} over {self.base_ring()}"
+
+    def _latex_(self):
+        r"""
+        Return a latex representation of ``self``.
+
+        EXAMPLES::
+
+            sage: B4 = SignedPermutations(4)
+            sage: latex(B4.simple_module([[2,1],[1]], GF(3)))
+            D^{{\def\lr#1{\multicolumn{1}{|@{\hspace{.6ex}}c@{\hspace{.6ex}}|}{\raisebox{-.3ex}{$#1$}}}
+            \raisebox{-.6ex}{$\begin{array}[b]{*{2}c}\cline{1-2}
+            \lr{\phantom{x}}&\lr{\phantom{x}}\\\cline{1-2}
+            \lr{\phantom{x}}\\\cline{1-1}
+            \end{array}$}
+            },{\def\lr#1{\multicolumn{1}{|@{\hspace{.6ex}}c@{\hspace{.6ex}}|}{\raisebox{-.3ex}{$#1$}}}
+            \raisebox{-.6ex}{$\begin{array}[b]{*{1}c}\cline{1-1}
+            \lr{\phantom{x}}\\\cline{1-1}
+            \end{array}$}
+            }}
+        """
+        from sage.misc.latex import latex
+        return "D^{" + ",".join(latex(la) for la in self._shape) + "}"
+
+    Element = SymGroupSpechtModule.Element
