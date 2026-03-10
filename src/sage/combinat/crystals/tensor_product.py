@@ -49,7 +49,8 @@ from .letters import CrystalOfLetters
 from .spins import CrystalOfSpins, CrystalOfSpinsMinus, CrystalOfSpinsPlus
 from sage.combinat.crystals.tensor_product_element import (TensorProductOfCrystalsElement,
         TensorProductOfRegularCrystalsElement, CrystalOfTableauxElement,
-        TensorProductOfSuperCrystalsElement, TensorProductOfQueerSuperCrystalsElement)
+        TensorProductOfSuperCrystalsElement, TensorProductOfQueerSuperCrystalsElement,
+        TensorProductOfSquareRootCrystalsElement)
 from sage.misc.flatten import flatten
 from sage.structure.element import get_coercion_model
 from sage.rings.semirings.non_negative_integer_semiring import NN
@@ -700,6 +701,23 @@ class FullTensorProductOfQueerSuperCrystals(FullTensorProductOfCrystals, QueerSu
         pass
 
 
+class FullTensorProductOfSquareRootCrystals(FullTensorProductOfCrystals):
+    r"""
+    Tensor product of queer super crystals.
+    """
+    def tensor(self, *crystals, **options):
+        """
+        Return the tensor product of ``self`` with the crystals ``B``.
+
+        EXAMPLES::
+        """
+        from sage.combinat.crystals.tensor_product import FullTensorProductOfSquareRootCrystals
+        return FullTensorProductOfSquareRootCrystals((self,) + tuple(crystals), **options)
+
+    class Element(TensorProductOfSquareRootCrystalsElement):
+        pass
+
+
 #########################################################
 ## Crystal of tableaux
 
@@ -921,6 +939,11 @@ class CrystalOfTableaux(CrystalOfWords):
                 raise ValueError("not a strict partition")
             shape = _Partitions(shape)
             return CrystalOfQueerTableaux(cartan_type, shape=shape)
+        if cartan_type.letter == 'S':
+            if shape is None:
+                shape = shapes
+            shape = _Partitions(shape)
+            return CrystalOfSquareRootTableaux(cartan_type, shape=shape)
         n = cartan_type.rank()
         # standardize shape/shapes input into a tuple of tuples
         # of length n, or n+1 in type A
@@ -1175,4 +1198,127 @@ class CrystalOfQueerTableaux(CrystalOfWords, QueerSuperCrystalsMixin):
             for l in self.parent().shape:
                 ret.append(self[pos:pos+l])
                 pos += l
+            return ret
+
+
+class CrystalOfSquareRootTableaux(CrystalOfWords):
+    """
+    A square root crystal of the semistandard set-valued tableaux
+    of a given shape.
+
+    INPUT:
+
+    - ``cartan_type`` -- a Cartan type
+    - ``shape`` -- a shape
+    """
+    def __init__(self, cartan_type, shape):
+        """
+        Initialize ``self``.
+
+        EXAMPLES::
+        """
+        from sage.categories.regular_supercrystals import RegularSuperCrystals
+        from sage.categories.finite_enumerated_sets import FiniteEnumeratedSets
+        Parent.__init__(self, category=(RegularCrystals(), FiniteEnumeratedSets()))
+        self.shape = _Partitions(shape)
+        self._cartan_type = cartan_type
+        self.letters = CrystalOfLetters(cartan_type)
+
+        # The row canonical tableau, read by row
+        p = list(enumerate(self.shape, start=1))
+        p.reverse()
+        data = [self.letters((i,)) for i, row_len in p for _ in range(row_len)]
+        self.module_generators = (self.element_class(self, list=data),)
+
+    def _repr_(self):
+        """
+        Return a string representation of ``self``.
+
+        EXAMPLES::
+
+            sage: crystals.Tableaux(['Q',3], shape=[4,2])
+            The crystal of tableaux of type ['Q', 3] and shape [4, 2]
+        """
+        return "The crystal of set-valued tableaux of type {} and shape {}".format(self._cartan_type, self.shape)
+
+    def tensor(self, *crystals, **options):
+        """
+        Return the tensor product of ``self`` with the crystals ``B``.
+
+        EXAMPLES::
+        """
+        from sage.combinat.crystals.tensor_product import FullTensorProductOfSquareRootCrystals
+        return FullTensorProductOfSquareRootCrystals((self,) + tuple(crystals), **options)
+
+    def squared_digraph(self, subset=None, index_set=None, depth=None):
+        r"""
+        Return the digraph of ``self`` with edges corresponding to `f_i^2` .
+        """
+        from sage.graphs.digraph import DiGraph
+        d = {}
+
+        # Parse optional arguments
+        if subset is None:
+            subset = self
+        if index_set is None:
+            index_set = self.index_set()
+
+        for x in subset:
+            d[x] = {}
+            for i in index_set:
+                child = x.f_string([i,i])
+                if child is None or child not in subset:
+                    continue
+                d[x][child] = i
+        G = DiGraph(d)
+        from sage.graphs.dot2tex_utils import have_dot2tex
+        if have_dot2tex():
+            G.set_latex_options(format='dot2tex',
+                                edge_labels=True,
+                                color_by_label=self.cartan_type()._index_set_coloring)
+        return G
+
+    class Element(TensorProductOfSquareRootCrystalsElement):
+        def _repr_(self):
+            """
+            Return a string representation of ``self``.
+
+            EXAMPLES::
+            """
+            return repr(self.rows())
+
+        def _ascii_art_(self):
+            r"""
+            Return an ASCII art representation of ``self``.
+
+            EXAMPLES::
+            """
+            from sage.typeset.ascii_art import AsciiArt
+            n = self.parent().cartan_type().rank()
+            ret = ["".join("%{}s".format(2*n+1) % ','.join(str(v) for v in x.value) for x in row)
+                   for i, row in enumerate(self.rows())]
+            return AsciiArt(ret)
+
+        def _latex_(self):
+            r"""
+            Return latex code for ``self``.
+
+            EXAMPLES::
+            """
+            from sage.combinat.output import tex_from_array
+            return tex_from_array([[',\\!'.join(str(v) for v in val.value) for val in row]
+                                   for i, row in enumerate(self.rows())])
+
+        def rows(self):
+            """
+            Return the list of rows of ``self`` in reverse order.
+
+            EXAMPLES::
+            """
+            ret = []
+            pos = 0
+            for l in reversed(self.parent().shape):
+                ret.append(self[pos:pos+l])
+                pos += l
+            ret.reverse()
             return ret

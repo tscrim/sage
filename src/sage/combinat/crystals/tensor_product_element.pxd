@@ -32,3 +32,6 @@ cdef class InfinityQueerCrystalOfTableauxElement(TensorProductOfQueerSuperCrysta
     cdef list _row_lengths
 
 cdef Py_ssize_t count_leading(list row, letter) noexcept
+
+cdef class TensorProductOfSquareRootCrystalsElement(TensorProductOfCrystalsElement):
+    pass

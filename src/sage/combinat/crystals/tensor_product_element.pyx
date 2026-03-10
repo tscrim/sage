@@ -1864,6 +1864,118 @@ cdef Py_ssize_t count_leading(list row, letter) noexcept:
             return len(row) - 1 - i
     return len(row)
 
+
+cdef class TensorProductOfSquareRootCrystalsElement(TensorProductOfCrystalsElement):
+    @cached_in_parent_method
+    def _wts(self, i):
+        """
+        Return the list of weights of elements of ``self`` paired with
+        *twice* the ``i``-th simple coroot.
+        """
+        P = self._list[-1].parent().weight_lattice_realization()
+        h = P.simple_coroots()
+        return tuple([2*elt.weight().scalar(h[i]) for elt in self._list])
+
+    def e(self, i):
+        r"""
+        Return the action of `e_i` on ``self``.
+
+        INPUT:
+
+        - ``i`` -- an element of the index set
+
+        EXAMPLES::
+
+            sage: B = crystals.infinity.Tableaux("D4")
+            sage: T = crystals.TensorProduct(B,B)
+            sage: b1 = B.highest_weight_vector().f_string([1,4,3])
+            sage: b2 = B.highest_weight_vector().f_string([2,2,3,1,4])
+            sage: t = T(b2, b1)
+            sage: t.e(1)
+            [[[1, 1, 1, 1, 1], [2, 2, 3, -3], [3]], [[1, 1, 1, 1, 2], [2, 2, 2], [3, -3]]]
+            sage: t.e(2)
+            sage: t.e(3)
+            [[[1, 1, 1, 1, 1, 2], [2, 2, 3, -4], [3]], [[1, 1, 1, 1, 2], [2, 2, 2], [3, -3]]]
+            sage: t.e(4)
+            [[[1, 1, 1, 1, 1, 2], [2, 2, 3, 4], [3]], [[1, 1, 1, 1, 2], [2, 2, 2], [3, -3]]]
+        """
+        N = len(self._list) + 1
+        wts = self._wts(i)
+        vals = [self._list[-k].epsilon(i) - sum(wts[-k+1:]) for k in range(N-1, 1, -1)]
+        vals.append(self._list[-1].epsilon(i))
+        mval = max(vals)
+        for k in range(1, N):
+            if vals[-k] == mval:
+                crystal = self._list[-k].e(i)
+                if crystal is None:
+                    return None
+                return self._set_index(-k, crystal)
+        return None
+
+    def f(self, i):
+        r"""
+        Return the action of `f_i` on ``self``.
+
+        INPUT:
+
+        - ``i`` -- an element of the index set
+
+        EXAMPLES::
+
+            sage: La = RootSystem(['A',3,1]).weight_lattice(extended=True).fundamental_weights()
+            sage: B = crystals.GeneralizedYoungWalls(3,La[0])
+            sage: T = crystals.TensorProduct(B,B,B)
+            sage: b1 = B.highest_weight_vector().f_string([0,3])
+            sage: b2 = B.highest_weight_vector().f_string([0])
+            sage: b3 = B.highest_weight_vector()
+            sage: t = T(b3, b2, b1)
+            sage: t.f(0)
+            [[[0]], [[0]], [[0, 3]]]
+            sage: t.f(1)
+            [[], [[0]], [[0, 3], [1]]]
+            sage: t.f(2)
+            [[], [[0]], [[0, 3, 2]]]
+            sage: t.f(3)
+            [[], [[0, 3]], [[0, 3]]]
+        """
+        N = len(self._list)
+        wts = self._wts(i)
+        vals = [self._list[k].phi(i) + sum(wts[:k]) for k in range(N)]
+        mval = max(vals)
+        for k in range(N):
+            if vals[k] == mval:
+                crystal = self._list[k].f(i)
+                if crystal is None:
+                    return None
+                return self._set_index(k, crystal)
+        return None
+
+    def epsilon(self, i):
+        r"""
+        Return `\varepsilon_i` of ``self``.
+
+        INPUT:
+
+        - ``i`` -- an element of the index set
+
+        EXAMPLES::
+        """
+        return self.phi(i) - sum(self._wts(i))
+
+    def phi(self, i):
+        r"""
+        Return `\varphi_i` of ``self``.
+
+        INPUT:
+
+        - ``i`` -- an element of the index set
+
+        EXAMPLES::
+        """
+        N = len(self._list)
+        wts = self._wts(i)
+        return max(self._list[k].phi(i) + sum(wts[:k]) for k in range(N))
+
 # for unpickling
 from sage.misc.persist import register_unpickle_override
 register_unpickle_override('sage.combinat.crystals.tensor_product', 'ImmutableListWithParent', ImmutableListWithParent)

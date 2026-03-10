@@ -1,4 +1,3 @@
-# sage.doctest: needs sage.combinat sage.modules
 r"""
 Crystals of letters
 """
@@ -10,6 +9,7 @@ Crystals of letters
 #                          Brant Jones    <brant at math.ucdavis.edu>
 #                     2017 Travis Scrimshaw <tcscrims at gmail.com>
 #                          Franco Saliola <saliola@gmail.com>
+#                     2026 Travis Scrimshaw <tcscrims at gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@ Crystals of letters
 # (at your option) any later version.
 #                  https://www.gnu.org/licenses/
 #*****************************************************************************
+
 from cpython.object cimport Py_EQ, Py_NE, Py_LE, Py_GE, Py_LT, Py_GT
 from sage.misc.cachefunc import cached_method
 from sage.misc.lazy_attribute import lazy_attribute
@@ -27,7 +28,7 @@ from sage.categories.enumerated_sets import EnumeratedSets
 from sage.categories.classical_crystals import ClassicalCrystals
 from sage.categories.regular_supercrystals import RegularSuperCrystals
 from sage.combinat.root_system.cartan_type import CartanType
-from sage.rings.integer import Integer
+from sage.rings.integer cimport Integer
 
 
 def CrystalOfLetters(cartan_type, element_print_style=None, dual=None):
@@ -113,6 +114,8 @@ def CrystalOfLetters(cartan_type, element_print_style=None, dual=None):
         return ClassicalCrystalOfLetters(ct, Crystal_of_letters_type_G_element)
     elif ct.letter == 'Q':
         return CrystalOfQueerLetters(ct)
+    elif ct.letter == 'S':
+        return CrystalOfSquareRootLetters(ct)
     else:
         raise NotImplementedError
 
@@ -2774,6 +2777,211 @@ cdef class QueerLetter_element(Letter):
         if self.value == i or self.value == -i:
             return 1
         return 0
+
+
+#########################
+# Type A Square Root
+#########################
+
+cdef class SquareRootLetter(LetterTuple):
+    """
+    A letter (``frozenset`` represented as a ``tuple``) in a square root
+    crystal.
+    """
+    def __init__(self, parent, value):
+        """
+        Initialize ``self``.
+
+        EXAMPLES::
+        """
+        if isinstance(value, frozenset):
+            value = tuple(sorted(value))
+        super().__init__(parent, value)
+
+    def _repr_(self):
+        r"""
+        A string representation of ``self``.
+
+        EXAMPLES::
+        """
+        return '{' + ','.join(str(val) for val in self.value) + '}'
+
+    def _unicode_art_(self):
+        r"""
+        A unicode art representation of ``self``.
+
+        EXAMPLES::
+        """
+        from sage.typeset.unicode_art import UnicodeArt
+        return UnicodeArt(self._repr_())
+
+    def _latex_(self):
+        r"""
+        A latex representation of ``self``.
+
+        EXAMPLES::
+        """
+        return "\\{" + ",\\!".join(str(val) for val in self.value) + "\\}"
+
+    cpdef SquareRootLetter e(self, int i):
+        r"""
+        Return the action of `e_i` on ``self``.
+
+        EXAMPLES::
+        """
+        cdef frozenset b = frozenset(self.value)
+        cdef Integer ii = Integer(i)
+        cdef Integer ip = Integer(i+1)
+        if ii in b:
+            if ip in b:
+                return self._parent._element_constructor_(b.difference([ip]))
+        elif ip in b:  # and ii not in b
+            return self._parent._element_constructor_(b.union([ii]))
+        return None
+
+    cpdef SquareRootLetter f(self, int i):
+        r"""
+        Return the action of `f_i` on ``self``.
+
+        EXAMPLES::
+        """
+        cdef frozenset b = frozenset(self.value)
+        cdef Integer ii = Integer(i)
+        cdef Integer ip = Integer(i+1)
+        if ip in b:
+            if ii in b:
+                return self._parent._element_constructor_(b.difference([ii]))
+        elif ii in b:  # and ip not in b
+            return self._parent._element_constructor_(b.union([ip]))
+        return None
+
+    cpdef int epsilon(self, int i) noexcept:
+        r"""
+        Return `\varepsilon_i` of ``self``.
+
+        EXAMPLES::
+
+            sage: C = crystals.Letters(['E',6])
+            sage: C((-6,)).epsilon(1)
+            0
+            sage: C((-6,)).epsilon(6)
+            1
+        """
+        if i+1 in self.value:
+            if i in self.value:
+                return 1
+            return 2
+        return 0
+
+    cpdef int phi(self, int i) noexcept:
+        r"""
+        Return `\varphi_i` of ``self``.
+
+        EXAMPLES::
+
+            sage: C = crystals.Letters(['E',6])
+            sage: C((1,)).phi(1)
+            1
+            sage: C((1,)).phi(6)
+            0
+        """
+        if i in self.value:
+            if i+1 in self.value:
+                return 1
+            return 2
+        return 0
+
+    def weight(self):
+        """
+        Return weight of ``self``.
+
+        EXAMPLES::
+        """
+        WLR = self._parent.weight_lattice_realization()
+        return WLR.sum_of_monomials(v-1 for v in self.value)
+
+
+class CrystalOfSquareRootLetters(ClassicalCrystalOfLetters):
+    r"""
+    Crystal of letters for square root crystals.
+
+    This implements the `\sqrt{\mathfrak{gl}_n}` crystal of
+    Marberg, Tong, and Yu [MTY2025]_.
+
+    EXAMPLES::
+
+        sage: C = crystals.Letters(['S', 4]); C
+        The crystal of letters for type ['A', [1, 1]]
+
+        sage: C = crystals.Letters(['A', [2,4]], dual=True); C
+        The crystal of letters for type ['A', [2, 4]] (dual)
+    """
+    @staticmethod
+    def __classcall_private__(cls, ct):
+        """
+        TESTS::
+
+            sage: crystals.Letters(['S', 4])
+            The crystal of letters for type ['A', [1, 1]]
+        """
+        ct = CartanType(ct)
+        return super().__classcall__(cls, ct)
+
+    def __init__(self, ct):
+        """
+        Initialize ``self``.
+
+        EXAMPLES::
+
+            sage: crystals.Letters(['A', [2, 1]])
+            The crystal of letters for type ['A', [2, 1]]
+        """
+        self._cartan_type = ct
+        from sage.categories.regular_crystals import RegularCrystals
+        Parent.__init__(self, category=RegularCrystals().Finite())
+        self.module_generators = (self._element_constructor_(frozenset([Integer(1)])),)
+        self._list = list(self.__iter__())
+
+    def __iter__(self):
+        """
+        Iterate through ``self``.
+
+        EXAMPLES::
+
+            sage: C = crystals.Letters(['S', 3])
+            sage: [x for x in C]
+            [{1}, {2}, {3}, {1,2}, {1,3}, {2,3}, {1,2,3}]
+        """
+        from itertools import combinations
+        cdef list X = [Integer(k) for k in range(1, self._cartan_type.n+2)]
+        cdef Py_ssize_t k
+        for k in range(1, len(X)+1):
+            for Y in combinations(X, k):
+                yield self._element_constructor_(frozenset(Y))
+
+    def _repr_(self):
+        """
+        TESTS::
+
+            sage: crystals.Letters(['S', 4])
+            The crystal of letters for type ['S', 4]
+        """
+        return "The crystal of letters for type {}".format(self._cartan_type)
+
+    # temporary workaround while an_element is overridden by Parent
+    _an_element_ = EnumeratedSets.ParentMethods._an_element_
+
+    def tensor(self, *crystals, **options):
+        """
+        Return the tensor product of ``self`` with the crystals ``B``.
+
+        EXAMPLES::
+        """
+        from sage.combinat.crystals.tensor_product import FullTensorProductOfSquareRootCrystals
+        return FullTensorProductOfSquareRootCrystals((self,) + tuple(crystals), **options)
+
+    Element = SquareRootLetter
+
 
 #########################
 # Wrapped letters

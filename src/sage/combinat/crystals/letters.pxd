@@ -69,6 +69,10 @@ cdef class QueerLetter_element(Letter):
     cpdef int epsilon(self, int i) noexcept
     cpdef int phi(self, int i) noexcept
 
+cdef class SquareRootLetter(LetterTuple):
+    cpdef SquareRootLetter e(self, int i)
+    cpdef SquareRootLetter f(self, int i)
+
 cdef class LetterWrapped(Element):
     cdef readonly Element value
     cpdef tuple _to_tuple(self)

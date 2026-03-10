@@ -47,6 +47,7 @@ py.install_sources(
   'type_H.py',
   'type_I.py',
   'type_Q.py',
+  'type_S.py',
   'type_affine.py',
   'type_dual.py',
   'type_folded.py',

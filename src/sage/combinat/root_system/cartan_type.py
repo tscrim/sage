@@ -671,6 +671,10 @@ class CartanTypeFactory(SageObject):
                     if n >= 1:
                         from . import type_Q
                         return type_Q.CartanType(n)
+                if letter == "S":
+                    if n >= 2:
+                        from . import type_S
+                        return type_S.CartanType(n)
 
             if len(t) == 3:
                 if t[2] == 1: # Untwisted affine
